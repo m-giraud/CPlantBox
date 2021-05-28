@@ -7,25 +7,26 @@ import vtk_plot as vp
 """ parameters """
 sim_time = 14  # [day]
 rs_age = 1  # initial age
-age_dependent = False  # conductivities
-dt = 0.1  # [days] Time step must be very small
+dt = 0.05  # [days] Time step must be very small
 periodic = False
 
 """ root system """
 rs = pb.MappedRootSystem()
 path = "../../../modelparameter/rootsystem/"
 name = "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
-rs.readParameters(path + name + ".xml")
+rs.readParameters(path + name + ".xml") 
 
 """ soil """
-min_ = np.array([-5, -5, -15])
+min_ = np.array([-5, -5, -20])
 max_ = np.array([5, 5, 0.])
-res_ = np.array([1, 3, 5])
+res_ = np.array([1, 5, 10])
 if not periodic:
     sdf = pb.SDF_PlantBox(0.99 * (max_[0] - min_[0]), 0.99 * (max_[1] - min_[1]), 0.99 * (max_[2] - min_[2]))
     rs.setGeometry(sdf)
-rs.setRectangularGrid(pb.Vector3d(min_), pb.Vector3d(max_), pb.Vector3d(res_), False)  # cut and map segments
+rs.setRectangularGrid(pb.Vector3d(min_), pb.Vector3d(max_), pb.Vector3d(res_), True)  # cut and map segments
 
+rs.getRootSystemParameter().seedPos = pb.Vector3d(0., 0., -0.1)
+rs.setSeed(100)
 rs.initialize()
 rs.simulate(rs_age, False)
 N = round(sim_time / dt)
@@ -35,7 +36,7 @@ anim = vp.AnimateRoots(ana)
 anim.min = min_
 anim.max = max_
 anim.res = res_
-anim.file = "results/example7a"
+anim.avi_name = "avi/example_7a_"
 anim.start()
 
 for i in range(0, N):

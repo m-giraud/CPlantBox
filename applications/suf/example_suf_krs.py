@@ -20,7 +20,7 @@ simtime = 20  # [day] for task b
 rs = pb.MappedRootSystem()
 
 path = "../../../CPlantBox//modelparameter/rootsystem/"
-name = "Glycine_max"  
+name = "Zea_mays_1_Leitner_2010"  # Glycine_max Brassica_napus_a_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")
 rs.getRootSystemParameter().seedPos.z = -0.1

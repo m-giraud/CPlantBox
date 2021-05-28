@@ -133,20 +133,20 @@ void Root::simulate(double dt, bool verbose)
                 double e = targetlength-length; // unimpeded elongation in time step dt
                 double scale = getRootRandomParameter()->f_se->getValue(nodes.back(), shared_from_this());
                 double dl = std::max(scale*e, 0.)+ this->epsilonDx;//  length increment = calculated length + increment from last time step too small to be added
+                this->epsilonDx = 0; // was applied
                 
                 // create geometry
                 if (p.ln.size()>0 ) { // root has children 
                     /* basal zone */
                     if ((dl>0)&&(length<p.lb)) { // length is the current length of the root
                         if (length+dl<=p.lb) {
-                            createSegments(dl,dt_,verbose);
-                            length+=dl- this->epsilonDx;
+                            length+= dl- createSegments(dl,dt_,verbose);
                             dl=0;
                         } else {
                             double ddx = p.lb-length;
-                            createSegments(ddx,dt_,verbose);
-                            dl-=ddx- this->epsilonDx; // ddx already has been created
-                            length=p.lb- this->epsilonDx;
+                            double epsilon = createSegments(ddx,dt_,verbose);
+                            dl-= ddx- epsilon; // ddx already has been created
+                            length= p.lb - epsilon;
                         }
                     }
                     double s = p.lb; // summed length
@@ -159,14 +159,13 @@ void Root::simulate(double dt, bool verbose)
                                     createLateral(dt_, verbose);
                                 }
                                 if (length+dl<=s) { // finish within inter-lateral distance i
-                                    createSegments(dl,dt_,verbose);
-                                    length+=dl- this->epsilonDx;
+                                    length+= dl- createSegments(dl,dt_,verbose);
                                     dl=0;
                                 } else { // grow over inter-lateral distance i
-                                    double ddx = s-length;
-                                    createSegments(ddx,dt_,verbose);
-                                    dl-=ddx- this->epsilonDx;
-                                    length=s- this->epsilonDx;
+                                    double ddx= s-length;
+                                    double epsilon= createSegments(ddx,dt_,verbose);
+                                    dl-= ddx- epsilon;
+                                    length= s- epsilon;
                                 }
                             }
                         }
@@ -176,13 +175,11 @@ void Root::simulate(double dt, bool verbose)
                     }
                     /* apical zone */
                     if (dl>0) {
-                        createSegments(dl,dt_,verbose);
-                        length+=dl- this->epsilonDx;
+                        length+= dl- createSegments(dl,dt_,verbose);
                     }
                 } else { // no laterals
                     if (dl>0) {
-                        createSegments(dl,dt_,verbose);
-                        length+=dl- this->epsilonDx;
+                        length+= dl- createSegments(dl,dt_,verbose);
                     }
                 } // if lateralgetLengths
             } // if active
@@ -314,15 +311,18 @@ Vector3d Root::getIncrement(const Vector3d& p, double sdx)
  *  @param l        total length of the segments that are created [cm]
  *  @param dt       time step [day]
  *  @param verbose  turns console output on or off
+ *
+ *  @return length that was neglected due to minDx()
  */
-void Root::createSegments(double l, double dt, bool verbose)
+double Root::createSegments(double l, double dt, bool verbose)
 {
     if (l==0) {
         std::cout << "Root::createSegments: zero length encountered \n";
-        return;
+        return 0.;
     }
     if (l<0) {
         std::cout << "Root::createSegments: negative length encountered \n";
+        return 0.;
     }
 
     // shift first node to axial resolution
@@ -346,7 +346,7 @@ void Root::createSegments(double l, double dt, bool verbose)
                 moved = true;
                 l -= shiftl;
                 if (l<=0) { // ==0 should be enough
-                    return;
+                    return 0.;
                 }
             } else {
                 moved = false;
@@ -365,12 +365,12 @@ void Root::createSegments(double l, double dt, bool verbose)
             sdx = dx();
         } else { // last segment
             sdx = l-n*dx();
-            if (sdx<dxMin()) { //plant.lock()->getMinDx()) { // quit if l is too small
+            if (sdx<dxMin()) {
                 if (verbose) {
 					std::cout << "length increment below dx threshold ("<< sdx <<" < "<< dxMin() << ") and kept in memory\n";
                 }
-				this->epsilonDx = sdx;
-                return;
+				this->epsilonDx += sdx; // was set to zero, at beginning the time step, add this to total error done in this simulation step
+                return sdx;
             }
         }
         sl += sdx;
@@ -381,6 +381,7 @@ void Root::createSegments(double l, double dt, bool verbose)
         // but might break down to temporal resolution
         addNode(newnode, et);
     }
+    return 0.;
 }
 
 /**

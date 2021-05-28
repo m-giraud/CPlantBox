@@ -58,7 +58,7 @@ protected:
 
     Vector3d heading() const; ///< current growth direction of the root
     virtual Vector3d getIncrement(const Vector3d& p, double sdx); ///< called by createSegments, to determine growth direction
-    void createSegments(double l, double dt, bool silence); ///< creates segments of length l, called by Root::simulate()
+    double createSegments(double l, double dt, bool silence); ///< creates segments of length l, called by Root::simulate()
 
     bool firstCall = true; ///< firstCall of createSegments in simulate
 

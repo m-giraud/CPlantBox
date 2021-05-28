@@ -4,6 +4,8 @@ import numpy as np
 sys.path.append("..")
 import plantbox as pb
 
+""" TODO """
+
 
 def stemAge(l, r, k):  # stem age at a certain length
     return -np.log(1 - l / k) * k / r
@@ -28,7 +30,7 @@ class TestStem(unittest.TestCase):
         """ an example used in the tests below, a main stem with laterals """
         self.plant = pb.Organism()  # store organism (not owned by Organ, or OrganRandomParameter)
         p0 = pb.StemRandomParameter(self.plant)
-        p0.name, p0.subType, p0.la, p0.lb, p0.lmax, p0.ln, p0.r, p0.dx = "main", 1,  10., 1., 100., 1., 1.5, 0.5
+        p0.name, p0.subType, p0.la, p0.lb, p0.lmax, p0.ln, p0.r, p0.dx = "main", 1, 10., 1., 100., 1., 1.5, 0.5
         p0.successor = [5]
         p0.successorP = [1.]
         p1 = pb.StemRandomParameter(self.plant)
@@ -68,8 +70,8 @@ class TestStem(unittest.TestCase):
                 poly[i, 0] = v.x
                 poly[i, 1] = v.y
                 poly[i, 2] = v.z
-            d = np.diff(poly, axis = 0)
-            sd = np.sqrt((d ** 2).sum(axis = 1))
+            d = np.diff(poly, axis=0)
+            sd = np.sqrt((d ** 2).sum(axis=1))
             nl2.append(sum(sd))
         for i in range(0, len(dt)):
             self.assertAlmostEqual(l[i], nl[i], 10, "numeric and analytic lengths do not agree in time step " + str(i + 1))
@@ -153,7 +155,7 @@ class TestStem(unittest.TestCase):
         """ tests some parameters on sequential organ list """
         self.stem_example_rtp()
         simtime = 30.             
-        self.stem.simulate(30,False)
+        self.stem.simulate(30, False)
         organs = self.stem.getOrgans()
         type, age, radius, order, ct = [], [], [], [], []
         for o in organs:
@@ -169,8 +171,6 @@ class TestStem(unittest.TestCase):
         self.assertEqual(order, type_, "getParameter: unexpected stem order")  # +1, because of artificial parent root
         for i in range(0, nol):
             self.assertAlmostEqual(age[i], simtime - ct[i], 10, "getParameter: age and creation time does not agree") 
-            
-                        
        
     def test_dynamics(self):
         """ tests if nodes created in last time step are correct """  #
@@ -186,13 +186,12 @@ class TestStem(unittest.TestCase):
         self.assertEqual(r.getOldNumberOfNodes(), non, "dynamics: wrong number of old nodes")
         dx = r.getStemRandomParameter().dx
         self.assertEqual(r.getNumberOfNodes() - non, round(2.4 * r.param().r / dx), "dynamics: unexpected number of new nodes")  # initially, close to linear growth
-
-                                 
         
     def test_leafgrow(self):
         """ tests if the stem can create leaf """  #
         self.stem_example_rtp()
         r = self.stem
+
 
 if __name__ == '__main__':
     unittest.main()

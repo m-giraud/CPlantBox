@@ -139,7 +139,7 @@ class TestRoot(unittest.TestCase):
                     nl += o.getParameter("length")
                 numeric_total.append(nl);
                 self.root = root
-            for i in range(0, len(times[1:])):
+            for i in range(0, len(times[1:])): 
                 self.assertAlmostEqual(numeric_total[i], analytic_total[i], 10, "numeric and analytic total lengths do not agree in time step " + str(i + 1))
 
     def test_parameter(self):
