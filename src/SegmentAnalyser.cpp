@@ -956,6 +956,28 @@ void SegmentAnalyser::writeRBSegments(std::ostream & os) const
  */
 void SegmentAnalyser::writeDGF(std::ostream & os) const
 {
+
+
+    assert(segO.size() == segments.size() && "segO size is wrong");
+
+    std::vector<double> radius = getParameter("radius");
+    std::vector<double> length  = getParameter("length");
+    std::vector<double> surface = getParameter("surface");
+    std::vector<double> ctime = getParameter("creationTime");
+    std::vector<double> subType = getParameter("subType", -1.); // -1 if no origin organ
+    std::vector<double> organType = getParameter("organType", Organism::ot_stem); // artificial stem
+    std::vector<double> order = getParameter("order", -1.); // -1 if no origin organ
+    std::vector<double> organId =  getParameter("id", -1.); // -1 if no origin organ
+    //
+    assert(radius.size() == segments.size() && "radius size is wrong");
+    assert(length.size() == segments.size() && "length size is wrong");
+    assert(surface.size() == segments.size() && "surface size is wrong");
+    assert(ctime.size() == segments.size() && "ctime size is wrong");
+    assert(subType.size() == segments.size() && "subType size is wrong");
+    assert(organType.size() == segments.size() && "organType size is wrong");
+    assert(order.size() == segments.size() && "order size is wrong");
+    assert(organId.size() == segments.size() && "organId size is wrong");
+
     os << "DGF" << std::endl;
     os << "Vertex" << std::endl;
     for (auto& n : nodes) {
@@ -967,14 +989,6 @@ void SegmentAnalyser::writeDGF(std::ostream & os) const
     // kz [cm4 hPa-1 d-1], kr [cm hPa-1 d-1], emergence time [d], subType, organType
     os << "parameters 10 # id0, id1, order, branchId, surf[cm2], length[cm], radius[cm], "
         "kz[cm4 hPa-1 d-1], kr[cm hPa-1 d-1], emergence time [d], subType, organType " << std::endl;
-    std::vector<double> radius = getParameter("radius");
-    std::vector<double> length  = getParameter("length");
-    std::vector<double> surface = getParameter("surface");
-    std::vector<double> ctime = getParameter("creationTime");
-    std::vector<double> subType = getParameter("subType", -1.); // -1 if no origin organ
-    std::vector<double> organType = getParameter("organType", Organism::ot_stem); // artificial stem
-    std::vector<double> order = getParameter("order", -1.); // -1 if no origin organ
-    std::vector<double> organId =  getParameter("id", -1.); // -1 if no origin organ
     for (size_t i=0; i<segments.size(); i++) {
         Vector2i s = segments.at(i);
         os << s.x << " " << s.y << " " << order.at(i) <<  " " << organId.at(i) << " " << surface.at(i) << " "
