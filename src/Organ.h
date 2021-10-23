@@ -77,8 +77,10 @@ public:
     virtual Vector3d getNode(int i) const { return nodes.at(i); } ///< i-th node of the organ, absolute coordinates per defaul
     int getNodeId(int i) const { return nodeIds.at(i); } ///< global node index of the i-th node, i is called the local node index
     double getNodeCT(int i) const { return nodeCTs.at(i); } ///< creation time of the i-th node
-    void addNode(Vector3d n, double t, size_t index = std::numeric_limits<size_t>::max(), bool shift = false); //< adds a node to the root
-    void addNode(Vector3d n, int id, double t, size_t index = std::numeric_limits<size_t>::max(), bool shift = false); //< adds a node to the root
+    void addNode(Vector3d n, double t, size_t index, bool shift); //< adds a node to the root
+    void addNode(Vector3d n, int id, double t, size_t index, bool shift ); //< adds a node to the root
+    void addNode(Vector3d n, int id, double t){addNode( n,  id, t, size_t(0), false);} //< adds a node to the organ, for link with pybind, overwise thinks that id is the index
+    void addNode(Vector3d n,  double t){addNode( n,   t, size_t(0),false);}; //< adds a node to the root, for link with pybind
     std::vector<Vector2i> getSegments() const; ///< per default, the organ is represented by a polyline
 	double dx() const; ///< returns the max axial resolution
 	double dxMin() const; ///< returns the min axial resolution
@@ -95,6 +97,7 @@ public:
     std::vector<std::shared_ptr<Organ>> getOrgans(int ot=-1); ///< the organ including children in a sequential vector
     void getOrgans(int otype, std::vector<std::shared_ptr<Organ>>& v); ///< the organ including children in a sequential vector
     virtual double getParameter(std::string name) const; ///< returns an organ parameter
+	int getNumberOfLaterals() const; ///< the number of emerged laterals (i.e. number of children with age>0)
 
     /* IO */
     virtual std::string toString() const; ///< info for debugging

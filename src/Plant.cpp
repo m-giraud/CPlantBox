@@ -74,22 +74,32 @@ void Plant::reset()
  * Sets up the plant according to the plant parameters,
  * a confining geometry, the tropism functions, and the growth functions.
  *
- * Call this method before simulation and after setting geometry, plant and root parameters
+ * If not used for test file: Call this method before simulation and after setting geometry, 
+ * plant and root parameters
+ * @param verbose       print information
+ * @param test          is it used for a test file 
+ *						(in which case only initialize seed and not the other organs)? 
+ *						@See CPlantBox/test/test_stem.py
  */
-void Plant::initialize(bool verbose)
+void Plant::initialize(bool verbose, bool test)
 {
     reset(); // just in case
 
     // create seed
     auto seed = std::make_shared<Seed>(shared_from_this());
-    seed->initialize(verbose);
+	if(!test){
+		seed->initialize(verbose);
+	}
     baseOrgans.push_back(seed);
 
     oldNumberOfNodes = getNumberOfNodes(); // todo check what this does
 
     // further initializations
-    initCallbacks();
+	if(!test){
+		initCallbacks();
+	}
 }
+
 
 /**
  * Called by RootSystem::initialize.

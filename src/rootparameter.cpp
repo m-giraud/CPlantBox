@@ -79,6 +79,10 @@ std::shared_ptr<OrganSpecificParameter> RootRandomParameter::realize()
     double la_;
     std::vector<double> ln_; // stores the inter-distances
 	bool hasKid = false;
+	if (dx <= dxMin){
+		std::cout<<"dx <= dxMin, dxMin set to dx/2"<<std::endl;
+		this->dxMin = dx/2;
+	}
 
     if (successor.size()==0) { // no laterals
 

@@ -5,7 +5,6 @@
 #include "organparameter.h"
 
 #include <stdexcept>
-#include <iostream>
 #include <ctime>
 #include <numeric>
 
@@ -177,10 +176,9 @@ void Organism::simulate(double dt, bool verbose)
 std::vector<std::shared_ptr<Organ>> Organism::getOrgans(int ot) const
 {
     auto organs = std::vector<std::shared_ptr<Organ>>(0);
-    // std::cout << "Organism::getOrgans: getNumberOfOrgans() " << getNumberOfOrgans() << "\n" << std::flush;
     organs.reserve(getNumberOfOrgans()); // just for speed up
     for (const auto& o : this->baseOrgans) {
-        o->getOrgans(ot, organs);
+		o->getOrgans(ot, organs);
     }
     return organs;
 }
@@ -286,13 +284,13 @@ std::vector<std::vector<double>> Organism::getPolylineCTs(int ot) const
 std::vector<Vector3d> Organism::getNodes() const
 {
     auto organs = getOrgans();
-    std::vector<Vector3d> nv = std::vector<Vector3d>(getNumberOfNodes()); // reserve big enough vector
-    for (const auto& o : baseOrgans) { // copy initial nodes (even if organs have not developed)
-        nv.at(o->getNodeId(0)) = o->getNode(0);
+	std::vector<Vector3d> nv = std::vector<Vector3d>(getNumberOfNodes()); // reserve big enough vector
+	for (const auto& o : baseOrgans) { // copy initial nodes (even if organs have not developed)
+		nv.at(o->getNodeId(0)) = o->getNode(0);
     }
-    for (const auto& o : organs) { // copy all organ nodes
-        for (size_t i = 1; i<o->getNumberOfNodes(); i++) { // since all base nodes are stored twice as base and along root
-            nv.at(o->getNodeId(i)) = o->getNode(i);
+	for (const auto& o : organs) { // copy all organ nodes
+		for (size_t i = 1; i<o->getNumberOfNodes(); i++) { // since all base nodes are stored twice as base and along root
+			nv.at(o->getNodeId(i)) = o->getNode(i);
         }
     }
     return nv;

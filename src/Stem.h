@@ -80,7 +80,6 @@ protected:
     void createSegments(double l, bool silence, int PhytoIdx = -1); ///< creates segments of length l, called by stem::simulate()
 
     bool firstCall = true;
-	double delayNG = 0.;
 
 };
 

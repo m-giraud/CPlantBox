@@ -399,8 +399,6 @@ double Root::getParameter(std::string name) const
     if (name=="nob") { return param()->nob(); } // number of lateral emergence nodes
     if (name=="k") { return param()->getK(); }; // maximal root length [cm]
     if (name=="lmax") { return param()->getK(); }; // maximal root length [cm]
-    // member functions
-    if (name=="numberOfLaterals") { return getNumberOfLaterals(); }
     // further
     if (name=="lnMean") { // mean lateral distance [cm]
         auto& v =param()->ln;
@@ -416,20 +414,6 @@ double Root::getParameter(std::string name) const
     if (name=="volume") { return param()->a*param()->a*M_PI*getLength(true); } // root volume [cm^3]
     if (name=="surface") { return 2*param()->a*M_PI*getLength(true); } // root surface [cm^2]
     return Organ::getParameter(name); // pass to base class
-}
-
-/**
- * @return The number of emerged lateral roots (i.e. number of children with age>0)
- * @see Organ::getNumberOfChildren
- */
-int Root::getNumberOfLaterals() const {
-	int nol = 0;
-	for (auto& c : children)  {
-		if (c->getAge()>0) { // born
-			nol ++;
-		}
-	}
-	return nol;
 }
 
 /**

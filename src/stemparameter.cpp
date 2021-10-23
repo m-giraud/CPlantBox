@@ -83,6 +83,10 @@ std::shared_ptr<OrganSpecificParameter> StemRandomParameter::realize()
 	double res;
 	int nob_ = 0;
 	bool laterals = false;
+	if (dx <= dxMin){
+		std::cout<<"dx <= dxMin, dxMin set to dx/2"<<std::endl;
+		this->dxMin = dx/2;
+	}
 	if (successor.size()==0) { // no laterals
 
     	lb_ = 0;
@@ -207,7 +211,9 @@ default:
     double a_ = std::max(a + p->randn()*as, 0.); // radius
     double theta_ = std::max(theta + p->randn()*thetas, 0.); // initial elongation
     double rlt_ = std::max(rlt + p->randn()*rlts, 0.); // stem life time
-    return std::make_shared<StemSpecificParameter>(subType,lb_,la_,ln_,nob_,r_,a_,theta_,rlt_,laterals, this->nodalGrowth, delayNG, delayNGs);
+	double delayNG_ = std::max(delayNG + p->randn()*delayNGs, 0.);
+	double delayLat_ = std::max(delayLat + p->randn()*delayLats, 0.);
+    return std::make_shared<StemSpecificParameter>(subType,lb_,la_,ln_,nob_,r_,a_,theta_,rlt_,laterals, this->nodalGrowth, delayNG_, delayLat_);
 }
 
 /**
@@ -367,7 +373,7 @@ void StemRandomParameter::bindParmeters()
     bindParameter("theta", &theta, "Angle between stem and parent stem [rad]", &thetas);
     bindParameter("rlt", &rlt, "Stem life time [day]", &rlts);
     bindParameter("gf", &gf, "Growth function number [1]", &rlts);
-    bindParameter("nodalGrowth", &nodalGrowth, "wether to implement nodal growth [bool]");
+    bindParameter("nodalGrowth", &nodalGrowth, "nodal growth function (sequential = 0, equal = 0)");
     bindParameter("delayNG", &delayNG, "delay between stem creation and start of nodal growth", &delayNGs);
     // other parameters (descriptions only)
     description["successor"] = "Sub type of lateral stems";

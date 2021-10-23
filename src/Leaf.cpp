@@ -19,7 +19,7 @@ namespace CPlantBox {
  * @param iheading  the initial heading of this leaf
  * @param pbl       base length of the parent leaf, where this leaf emerges
  * @param pni       local node index, where this leaf emerges
- * @param moved     indicates if nodes were moved in the previous time step (default = false)
+ * @param moved     DEPRECATED indicates if nodes were moved in the previous time step (default = false)
  * @param oldNON    the number of nodes of the previous time step (default = 0)
  */
 Leaf::Leaf(int id, const std::shared_ptr<const OrganSpecificParameter> param, bool alive, bool active, double age, double length,
@@ -62,7 +62,15 @@ Leaf::Leaf(std::shared_ptr<Organism> plant, int type, Matrix3d iHeading, double 
 	this->partialIHeading = Vector3d::rotAB(theta,beta);
 	
 	if (parent->organType()!=Organism::ot_seed) { // initial node
-		addNode(Vector3d(0.,0.,0.), parent->getNodeId(pni), parent->getNodeCT(pni)+delay);
+	
+		double creationTime;
+		if (parent->organType()==Organism::ot_stem) {
+			if (parent->getNumberOfChildren() == 0){creationTime = parent->getNodeCT(pni)+delay;
+			}else{creationTime = parent->getChild(0)->getParameter("creationTime") + delay;}
+		}else{
+			creationTime = parent->getNodeCT(pni)+delay;
+		}
+		addNode(Vector3d(0.,0.,0.), parent->getNodeId(pni), creationTime);
 	}
 }
 

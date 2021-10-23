@@ -11,6 +11,7 @@
 #include <map>
 #include <array>
 #include <memory>
+#include <iostream>
 
 namespace CPlantBox {
 
@@ -52,8 +53,9 @@ public:
     void setOrganRandomParameter(std::shared_ptr<OrganRandomParameter> p); ///< sets an organ type parameter, subType and organType defined within p
     int getParameterSubType(int organtype, std::string str) const; ///< returns the parameter sub type index of name @param str
 
+    
     /* initialization and simulation */
-    void addOrgan(std::shared_ptr<Organ> o) { baseOrgans.push_back(o); } ///< adds an organ, takes ownership
+    void addOrgan(std::shared_ptr<Organ> o) { baseOrgans.push_back(o);std::cout<<"addorgan "<<baseOrgans.size()<<std::endl; } ///< adds an organ, takes ownership
     virtual void initialize(bool verbose = true); ///< overwrite for initialization jobs
     virtual void simulate(double dt, bool verbose = false); ///< calls the base organs simulate methods
     double getSimTime() const { return simtime; } ///< returns the current simulation time
@@ -108,17 +110,18 @@ public:
 
     /* random number generator */
     virtual void setSeed(unsigned int seed); ///< sets the seed of the organisms random number generator
-    virtual double rand() { return UD(gen); } ///< uniformly distributed random number (0,1)
-    virtual double randn() { return ND(gen); } ///< normally distributed random number (0,1)
+    virtual double rand() {if(stochastic){return UD(gen);} else {return 0.5; } }  ///< uniformly distributed random number (0,1)
+    virtual double randn() {if(stochastic){return ND(gen);} else {return 0.5; } }  ///< normally distributed random number (0,1)
 	double getSeedVal(){return seed_val;}
+	void setStochastic(bool stochastic_){stochastic = stochastic_;}
+	bool getStochastic(){return stochastic;}
 	
 	
+    std::vector<std::shared_ptr<Organ>> baseOrgans;  ///< base organs of the root system
 protected:
-
     virtual tinyxml2:: XMLElement* getRSMLMetadata(tinyxml2::XMLDocument& doc) const;
     virtual tinyxml2:: XMLElement* getRSMLScene(tinyxml2::XMLDocument& doc) const;
 
-    std::vector<std::shared_ptr<Organ>> baseOrgans;  ///< base organs of the root system
 
     static const int numberOfOrganTypes = 5;
     std::array<std::map<int, std::shared_ptr<OrganRandomParameter>>, numberOfOrganTypes> organParam;
@@ -138,6 +141,7 @@ protected:
     std::mt19937 gen;
     std::uniform_real_distribution<double> UD;
     std::normal_distribution<double> ND;
+	bool stochastic = true;
 
 };
 

@@ -83,8 +83,8 @@ protected:
 	std::weak_ptr<SignedDistanceFunction> geometry; ///< confining geometry todo
 	const int alphaN = 20;
 	const int betaN = 5;
-    double randn(int nNode) {if(nNode > 0){ return ND(gen);}else{return plant.lock()->randn();}; } ///< normally distributed random number (0,1)
-    double rand(int nNode) {if(nNode > 0){ return UD(gen);}else{return plant.lock()->randn();}; } ///< uniformly distributed random number (0,1)
+    double randn(int nNode) {if((nNode > 0)&&(plant.lock()->getStochastic())){ return ND(gen);}else{return plant.lock()->randn();}; } ///< normally distributed random number (0,1)
+    double rand(int nNode) {if((nNode > 0)&&(plant.lock()->getStochastic())){ return UD(gen);}else{return plant.lock()->randn();}; } ///< uniformly distributed random number (0,1)
 	std::normal_distribution<double> ND;
     std::uniform_real_distribution<double> UD;
 	std::mt19937 gen;
@@ -258,7 +258,7 @@ class AntiGravitropism : public Tropism
 {
 public:
 
-	AntiGravitropism(std::shared_ptr<Organism> plant, double n, double sigma) : Tropism(plant, n,sigma) { } ///< @see TropismFunction
+	AntiGravitropism(std::shared_ptr<Organism> plant, double n, double sigma) : Tropism(plant, n,sigma) {} ///< @see TropismFunction
 
     std::shared_ptr<Tropism>  copy(std::shared_ptr<Organism> plant) override {
         auto nt = std::make_shared<AntiGravitropism>(*this); // default copy constructor
@@ -268,6 +268,7 @@ public:
 
 
 	virtual double tropismObjective(const Vector3d& pos, const Matrix3d& old, double a, double b, double dx, const std::shared_ptr<Organ> stem) override {
+		
 		return  -0.5*(old.times(Vector3d::rotAB(a,b)).z+1.); // negative values point downwards, tranformed to 0..1
 	}
 	///< TropismFunction::getHeading minimizes this function, @see TropismFunction::getHeading and @see TropismFunction::tropismObjective

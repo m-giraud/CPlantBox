@@ -54,7 +54,7 @@ public:
   void setGeometry(std::shared_ptr<SignedDistanceFunction> geom) { geometry = geom; }  ///< optionally, sets a confining geometry (call before Plant::initialize())
   void setSoil(std::shared_ptr<SoilLookUp> soil_) { soil = soil_; } ///< optionally sets a soil for hydro tropism (call before Plant::initialize())
   void reset(); ///< resets the plant class, keeps the organ type parameters
-  void initialize(bool verbose = true) override; ///< creates the base roots, call before simulation and after setting the plant and root parameters
+  void initialize(bool verbose = true, bool test = false); ///< creates the base roots, call before simulation and after setting the plant and root parameters
   void setTropism(std::shared_ptr<Tropism> tf, int organType, int subType = -1); ///< todo docme
   void simulate(); ///< simulates root system growth for the time defined in the root system parameters
   void simulate(double dt, bool verbose = false) override; 
@@ -71,6 +71,7 @@ public:
   std::vector<int> leafphytomerID = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 protected:
+  std::weak_ptr<Plant> plant; ///< the plant of which this organ is part of
   void abs2rel();
   void rel2abs();
 

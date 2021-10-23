@@ -550,6 +550,7 @@ void MappedPlant::initialize(bool verbose, bool stochastic) {
 	std::cout << "MappedPlant::initialize \n" << std::flush;
 	this->stochastic = stochastic;
 	Plant::initialize(verbose);
+	Plant::setStochastic(stochastic);
 	nodes = this->getNodes();
 	nodeCTs = this->getNodeCTs();
 	mapSegments(segments);
@@ -599,7 +600,9 @@ void MappedPlant::simulate(double dt, bool verbose)
 	if (soil_index==nullptr) {
 		throw std::invalid_argument("MappedPlant::simulate():soil was not set, use MappedPlant::simulate::setSoilGrid" );
 	}
+	std::cout<<"mapped plant start simulate"<<std::endl;
 	Plant::simulate( dt,  verbose);
+	std::cout<<"plant end simulate"<<std::endl;
 	auto uni = this->getUpdatedNodeIndices(); // move nodes
 	auto unodes = this->getUpdatedNodes();
 	auto uncts = this->getUpdatedNodeCTs();

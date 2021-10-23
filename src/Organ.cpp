@@ -50,7 +50,7 @@ Organ::Organ(std::shared_ptr<Organism> plant, std::shared_ptr<Organ> parent, int
 :iHeading(iHeading), parentNI(pni), plant(plant), parent(parent), id(plant->getOrganIndex()),
   param_(plant->getOrganRandomParameter(ot, st)->realize()), /* root parameters are diced in the getOrganRandomParameter class */
   age(-delay)
-{ }
+{}
 
 /*
  * Deep copies this organ into the new plant @param plant.
@@ -173,7 +173,7 @@ void Organ::addChild(std::shared_ptr<Organ> c)
  */
 void Organ::addNode(Vector3d n, int id, double t, size_t index, bool shift)
 {
-	
+	std::cout<<"ORgan::addNode "<<this->id<<" "<<id<<" "<<t<<" "<<index<<" "<<shift<<std::endl;
 	if(!shift){//node added at the end of organ
 		nodes.push_back(n); // node
 		nodeIds.push_back(id); // new unique id
@@ -298,6 +298,20 @@ void Organ::getOrgans(int ot, std::vector<std::shared_ptr<Organ>>& v)
 }
 
 /**
+ * @return The number of emerged lateral roots (i.e. number of children with age>0)
+ * @see Organ::getNumberOfChildren
+ */
+int Organ::getNumberOfLaterals() const {
+	int nol = 0;
+	for (auto& c : children)  {
+		if (c->getAge()>0) { // born
+			nol ++;
+		}
+	}
+	return nol;
+}
+
+/**
  * Returns a single scalar parameter called @param name of the organ.
  * This method is for post processing, since it is flexible but slow.
  * Overwrite to add more parameters for specific organs.
@@ -332,10 +346,12 @@ double Organ::getParameter(std::string name) const {
 	if (name=="active") { return isActive(); }
 	if (name=="age") { return getAge(); }
     if (name=="length") { return getLength(true); } //realized organ length, dependent on dxMin and dx
+    if (name=="lengthTh") { return getLength(false); } //theoratical organ length, dependent on dxMin and dx
     if (name=="numberOfNodes") { return getNumberOfNodes(); }
     if (name=="numberOfSegments") { return getNumberOfSegments(); }
     if (name=="hasMoved") { return hasMoved(); }
     if (name=="oldNumberOfNodes") { return getOldNumberOfNodes(); }
+    if (name=="numberOfLaterals") { return getNumberOfLaterals(); }
     // further
     if (name=="creationTime") { return getNodeCT(0); }
 	if (name=="order") { // count how often it is possible to move up

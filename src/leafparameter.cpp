@@ -86,6 +86,10 @@ std::shared_ptr<OrganSpecificParameter> LeafRandomParameter::realize()
     std::vector<double> ln_; // stores the inter-distances
 	double res;
 	int nob_ = 0;
+	if (dx <= dxMin){
+		std::cout<<"dx <= dxMin, dxMin set to dx/2"<<std::endl;
+		this->dxMin = dx/2;
+	}
 	
 	if (successor.size()==0) { // no laterals
 

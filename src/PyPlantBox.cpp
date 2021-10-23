@@ -260,7 +260,8 @@ PYBIND11_MODULE(plantbox, m) {
             .def("copy",&Organ::copy)
             .def("organType",&Organ::organType)
             .def("simulate",&Organ::simulate,py::arg("dt"), py::arg("verbose") = bool(false) ) // default
-
+			.def("getNumberOfLaterals", &Organ::getNumberOfLaterals)
+			.def("getPlant",&Organ::setParent)
             .def("setParent",&Organ::setParent)
             .def("getParent",&Organ::getParent)
             .def("setOrganism",&Organ::setOrganism)
@@ -285,8 +286,8 @@ PYBIND11_MODULE(plantbox, m) {
 			.def("getNode",&Organ::getNode)
             .def("getNodeId",&Organ::getNodeId)
             .def("getNodeCT",&Organ::getNodeCT)
-            .def("addNode",(void (Organ::*)(Vector3d n, double t, size_t index, bool shift)) &Organ::addNode) // overloads
-            .def("addNode",(void (Organ::*)(Vector3d n, int id, double t, size_t index, bool shift)) &Organ::addNode) // overloads
+            .def("addNode",(void (Organ::*)(Vector3d n, double t)) &Organ::addNode,  py::arg("n"), py::arg("t")) // overloads
+            .def("addNode",(void (Organ::*)(Vector3d n, int id, double t)) &Organ::addNode,  py::arg("n"),  py::arg("id"),py::arg("t")) // overloads
             .def("getSegments",&Organ::getSegments)
             .def("dx",&Organ::dx)
             .def("dxMin",&Organ::dxMin)
@@ -670,7 +671,12 @@ PYBIND11_MODULE(plantbox, m) {
             .def_readwrite("f_tf", &StemRandomParameter::f_tf)
             .def_readwrite("f_se", &StemRandomParameter::f_se)
             .def_readwrite("f_sa", &StemRandomParameter::f_sa)
-            .def_readwrite("f_sbp", &StemRandomParameter::f_sbp);
+            .def_readwrite("f_sbp", &StemRandomParameter::f_sbp)
+            .def_readwrite("nodalGrowth", &StemRandomParameter::nodalGrowth)
+            .def_readwrite("delayNG", &StemRandomParameter::delayNG)
+            .def_readwrite("delayNGs", &StemRandomParameter::delayNGs)
+            .def_readwrite("delayLat", &StemRandomParameter::delayLat)
+            .def_readwrite("delayLats", &StemRandomParameter::delayLats);
     py::class_<StemSpecificParameter, OrganSpecificParameter, std::shared_ptr<StemSpecificParameter>>(m, "StemSpecificParameter")
             .def(py::init<>())
             .def(py::init<int , double, double, const std::vector<double>&, double, double, double, double, double>())
@@ -682,14 +688,15 @@ PYBIND11_MODULE(plantbox, m) {
             .def_readwrite("theta", &StemSpecificParameter::theta)
             .def_readwrite("rlt", &StemSpecificParameter::rlt)
             .def("getK",&StemSpecificParameter::getK)
-            .def("nob", &StemSpecificParameter::nob);
+            .def("nob", &StemSpecificParameter::nob)
+            .def_readwrite("delayLat", &StemSpecificParameter::delayLat)
+            .def_readwrite("delayNG", &StemSpecificParameter::delayNG);
     /**
      * Root.h
      */
     py::class_<Root, Organ, std::shared_ptr<Root>>(m, "Root")
             .def(py::init<std::shared_ptr<Organism>, int, Vector3d, double, std::shared_ptr<Organ>, int>())
             .def(py::init<int, std::shared_ptr<OrganSpecificParameter>, bool, bool, double, double, Vector3d, int, bool, int>())
-			.def("getNumberOfLaterals", &Root::getNumberOfLaterals)
 			.def("calcCreationTime", &Root::calcCreationTime)
             .def("calcLength", &Root::calcLength)
             .def("calcAge", &Root::calcAge)
@@ -862,7 +869,7 @@ PYBIND11_MODULE(plantbox, m) {
             .def("reset", &Plant::reset)
             .def("openXML", &Plant::openXML)
             .def("setTropism", &Plant::setTropism)
-            .def("initialize", &Plant::initialize, py::arg("verbose") = true)
+            .def("initialize", &Plant::initialize, py::arg("verbose") = true, py::arg("test") = false)
             .def("simulate",(void (Plant::*)(double,bool)) &Plant::simulate, py::arg("dt"), py::arg("verbose") = false) 
             .def("simulate",(void (Plant::*)()) &Plant::simulate)
             .def("initCallbacks", &Plant::initCallbacks)

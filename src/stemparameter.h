@@ -27,9 +27,9 @@ public:
 
     StemSpecificParameter(): StemSpecificParameter(-1,0.,0.,std::vector<double>(0),0,0.,0.,0.,0.) { } ///< Default constructor
     StemSpecificParameter(int type, double lb, double la, const std::vector<double>& ln, int nob, double r, double a, double theta, double rlt,
-	 bool laterals= false, int nodalGrowth = 0, double delayNG = 0., double delayNGs = 0.):
+	 bool laterals= false, int nodalGrowth = 0, double delayNG = 0., double delayLat = 0.):
         OrganSpecificParameter(type, a),  lb(lb), la(la), r(r), theta(theta), rlt(rlt), ln(ln), 
-		laterals(laterals), nodalGrowth(bool(nodalGrowth)), delayNG(delayNG), delayNGs(delayNGs) { } ///< Constructor setting all parameters
+		laterals(laterals), nodalGrowth(nodalGrowth), delayNG(delayNG), delayLat(delayLat){ } ///< Constructor setting all parameters
 
     /*
      * StemBox parameters per single stem
@@ -41,9 +41,9 @@ public:
     double rlt;             ///< Stem life time [day]
     std::vector<double> ln; ///< Inter-lateral distances [cm]
 	bool laterals = false;
-	bool nodalGrowth;			///< whether to implement the internodal growth [1] (see @stem::simulate)
+	int nodalGrowth;			///< whether to implement the internodal growth [1] (see @stem::simulate)
 	double delayNG;
-	double delayNGs;
+	double delayLat;
 
     int nob() const { return ln.size() + laterals; } ///< return the maximal number of lateral branches [1]
     double getK() const; ///< Returns the exact maximal stem length of this realization [cm]
@@ -112,6 +112,8 @@ public:
     int nodalGrowth = 0;		///< whether to implement the internodal growth (see @stem::simulate)
 	double delayNG = 0.;		///< delay between stem creation and start of nodal growth [day]
 	double delayNGs = 0.;		///< delay between stem creation and start of nodal growth, deviation [day]
+	double delayLat = 0.;		///< delay between stem creation and start of nodal growth [day]
+	double delayLats = 0.;		///< delay between stem creation and start of nodal growth, deviation [day]
     std::vector<int> successor = std::vector<int>(0);			///< Lateral types [1]
     std::vector<double> successorP = std::vector<double>(0);  	///< Probabilities of lateral type to emerge (sum of values == 1) [1]
 

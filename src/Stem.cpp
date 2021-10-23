@@ -22,7 +22,7 @@ std::vector<int> Stem::phytomerId = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
  * @param iheading  the initial heading of this root
  * @param pbl       base length of the parent root, where this root emerges
  * @param pni       local node index, where this root emerges
- * @param moved     indicates if nodes were moved in the previous time step (default = false)
+ * @param moved     DEPRECATED indicates if nodes were moved in the previous time step (default = false)
  * @param oldNON    the number of nodes of the previous time step (default = 0)
  */
 Stem::Stem(int id, std::shared_ptr<const OrganSpecificParameter> param, bool alive, bool active, double age, double length,
@@ -53,7 +53,6 @@ Stem::Stem(std::shared_ptr<Organism> plant, int type, Matrix3d iHeading, double 
 	so it is disabled and rerolled to old heading*/
 	assert(parent!=nullptr && "Stem::Stem parent must be set");
 	auto p = this->param();
-	this->delayNG = p->delayNG + p->delayNGs * plant->randn();//delay between basal growth elongation and internodal growth
 	addPhytomerId(p->subType);
 	double beta = getphytomerId(p->subType)*M_PI*getStemRandomParameter()->rotBeta +
 			M_PI*plant->rand()*getStemRandomParameter()->betaDev;
@@ -66,9 +65,15 @@ Stem::Stem(std::shared_ptr<Organism> plant, int type, Matrix3d iHeading, double 
 		double scale = getStemRandomParameter()->f_sa->getValue(parent->getNode(pni), parent);
 		theta *= scale;
 	}
+	
 	this->partialIHeading = Vector3d::rotAB(theta,beta);
 	if (parent->organType()!=Organism::ot_seed) { // initial node
-		addNode(Vector3d(0.,0.,0.), parent->getNodeId(pni), parent->getNodeCT(pni)+delay);
+		
+		double creationTime;
+		if (parent->getNumberOfChildren() == 0){creationTime = parent->getNodeCT(pni)+delay;
+		}else{creationTime = parent->getChild(0)->getParameter("creationTime") + delay;}
+		
+		addNode(Vector3d(0.,0.,0.), parent->getNodeId(pni), creationTime );
 	}
 }
 
@@ -99,13 +104,12 @@ std::shared_ptr<Organ> Stem::copy(std::shared_ptr<Organism> p)
  */
 void Stem::simulate(double dt, bool verbose)
 {
+	std::cout<<"stem::simulate "<<id<<std::endl;
 	const StemSpecificParameter& p = *param(); // rename
 	firstCall = true;
-	moved = false;
 	oldNumberOfNodes = nodes.size();
 	auto p_all = plant.lock();
 	auto p_stem = p_all->getOrganRandomParameter(Organism::ot_stem);
-
 	int nC = getPlant()->getSeed()->param()->nC; //number of the shoot born root
 	double nZ = getPlant()->getSeed()->param()->nz; // distance between shoot born root and the seed
 	double res = nZ -floor(nZ / dx())*dx();
@@ -123,7 +127,6 @@ void Stem::simulate(double dt, bool verbose)
 	} else {
 		additional_childern = 0;
 	}
-
 	if (alive) { // dead roots wont grow
 
 		// increase age
@@ -150,29 +153,33 @@ void Stem::simulate(double dt, bool verbose)
 			for (auto l:children) {
 				l->simulate(dt,verbose);
 			}
-
 			if (active) {
 
 				// length increment
-				double age_ = calcAge(length); // root age as if grown unimpeded (lower than real age)
-				double dt_; // time step
-				if (age<dt) { // the root emerged in this time step, adjust time step
-					dt_= age;
-				} else {
-					dt_=dt;
-				}
-				if((length >= p.lb) && (delayNG >0)&& p.nodalGrowth){//stop growth until the nodal growth delay is "spent"
-					double wait = std::min(delayNG, dt_ );
-					delayNG -= wait;
-					dt_ -= wait ;//until end of nodal growth delay, dt_ ==0, giving dl == this->epsilonDx. 
+				std::cout<<"	length increment "<<id<<" "<<age<<" "<<length<<" "<<this->epsilonDx<<std::endl;
+				//double age_ = calcAge(length); // root age as if grown unimpeded (lower than real age)
+				//double dt_; // time step
+				//if (age<dt) { // the root emerged in this time step, adjust time step
+				//	dt_= age;
+				//} else {
+				//	dt_=dt;
+				//}
+				double delayNG_ = 0.;
+				double ageAtLb = calcAge(p.lb);
+				
+				if((age > ageAtLb)){// && (delayNG >0)
+					delayNG_ = std::min(p.delayNG, age - ageAtLb );
 				} 
-				double targetlength = calcLength(age_+dt_)+ this->epsilonDx;
+				//double targetlength = calcLength(age_+dt_)+ this->epsilonDx;
+				double targetlength = calcLength(age - delayNG_)+ this->epsilonDx;
 				double e = targetlength-length; // unimpeded elongation in time step dt
-				//double scale = getStemRandomParameter()->f_sa->getValue(rel2abs(nodes.back()),shared_from_this());
-				double dl = e;//std::max(scale*e, 0.);//   // length increment = calculated length + increment from last time step too small to be added
+				
+				double dl = e;//std::max(scale*e, 0.);// length increment = calculated length + increment from last time step too small to be added
 				length = getLength();
 				this->epsilonDx = 0.; // now it is "spent" on targetlength (no need for -this->epsilonDx in the following)
 				// create geometry
+				std::cout<<"	to grow "<<id<<" "<<length<<" "<<dl<<" "
+				<<nodes.size()<<" "<<p.ln.size()<<" "<<children.size()<<std::endl;
 				if (p.ln.size()>0) { // stem has laterals
 					//std::cout<<"sim seed nC is"<< nC<<"\n";
 					//std::cout<<"sim seed nZ is"<< nZ<<"\n";
@@ -198,6 +205,7 @@ void Stem::simulate(double dt, bool verbose)
 
 					/* basal zone */
 					if ((dl>0)&&(length<p.lb)) { // length is the current length of the root
+					std::cout<<"	in basal zone "<<dl<<std::endl;
 						if (length+dl<=p.lb) {
 							createSegments(dl,verbose);
 							length+=dl;
@@ -213,55 +221,44 @@ void Stem::simulate(double dt, bool verbose)
 						}
 					}
 					/* branching zone */
-					if ((((dl>0)&&(p.nodalGrowth==0))||(((p.nodalGrowth==1))))&&(children.size()<p.ln.size())&&(length>=p.lb)) {
-						double s = p.lb; // summed length
+					std::cout<<"	before branching zone "<<id<<" "<<children.size()<<" "<<
+					additional_childern<<" "<<(p.ln.size()+1)<<" "<<length<<" "<<p.lb<<
+					(children.size()-additional_childern)<<" "<<(length>=p.lb)<<std::endl;
+					if (((children.size()-additional_childern)<(p.ln.size()+1))&&(length>=p.lb)) {
+					std::cout<<"	in branching zone "<<id<<" "<<dl<<std::endl;
 						//do elongation if their is still growth to be done (dl > 0) of if we have stem nodal growth (in which case enough nodes are created
 						//to carry the laterals)
-						for (size_t i=0; ((i<p.ln.size()) && ((dl>0)||(p.nodalGrowth))); i++) {
-							if((p.nodalGrowth==0)){s+=p.ln.at(i);
-							}else{s+=this->dxMin();}//smallest distance if internodal growth to create the nodes and the laterals, and then growth
-							if (length<s) {
-								if (i==children.size()-additional_childern) { // new lateral
-									//this decide which successor grow the leaf (TODO) adding it to parameterfile
-
-									createLateral(verbose);
-									if (getStemRandomParameter()->getLateralType(getNode(nodes.size()-1))==2){
-										leafGrow(verbose);
-									}else
-									{
-										// terminates the loop if the stem is not organtype 2
-										//break;
-									}
-
-								}
-								if (length+dl<=s&&p.nodalGrowth==0) { // finish within inter-lateral distance i. onyl used in case of non-nodal growth
-									createSegments(dl,verbose);
-									length+=dl;
-									dl=0;
-								} 
-								if (length+dl>s||p.nodalGrowth==1){ // grow over inter-lateral distance i
-									//if nodalGrowth, create the necessary segments (length = dxMin) to carry the children (leaves)
-									//even if dl = 0
-									double ddx = s-length;
-									createSegments(ddx,verbose);
-									dl-=ddx;
-									length=s;
-									
-								}
-							}
-						}
-						if ((p.ln.size()==(children.size()-additional_childern)) && (getLength(true)>=s)) { // new lateral (the last one)
+						for (size_t i=0; (i<p.ln.size()); i++) {
+							std::cout<<"		"<<i<<" "<<length<<" "<<children.size()<<std::endl;
 							createLateral(verbose);
+							if (getStemRandomParameter()->getLateralType(getNode(nodes.size()-1))==2){
+								leafGrow(verbose);
+							}
+							createSegments(this->dxMin(),verbose);
+							dl-=this->dxMin();
+							length+=this->dxMin();
+							
+						}
+						createLateral(verbose);
 							if (getStemRandomParameter()->getLateralType(getNode(nodes.size()-1))==2){
 											leafGrow(verbose);
 							}
-						}
+					}
+					
+					if((length>=p.lb)&&((p.ln.size()+1)!=(children.size()))){
+						std::stringstream errMsg;
+						errMsg <<"Stem::simulate(): different number of realized laterals ("<<children.size()<<
+						") and max laterals ("<<p.ln.size()+1<<")";
+						throw std::runtime_error(errMsg.str().c_str());
 					}
 					//internodal elongation, if the basal zone of the stem is created and still has to grow
-					if(((p.nodalGrowth==1)&&(dl>0))&&(length>=p.lb)){
+					double maxInternodeDistance = p.getK()-p.la - p.lb;//maximum length of branching zone
+							
+					if((dl>0)&&(length>=p.lb)){
+						std::cout<<"	elongation "<<id<<" "<<dl<<" "<<length<<" "<<epsilonDx<<" "<<
+						children.size()<<" "<<p.ln.size()<<" "<<nodes.size()<<" "<<children.at(p.ln.size())->parentNI<<std::endl;
 							int nn = children.at(p.ln.size())->parentNI; //node carrying the last lateral == end of branching zone
 							double currentInternodeDistance = getLength(nn) - p.lb; //actual length of branching zone
-							double maxInternodeDistance = p.getK()-p.la - p.lb;//maximum length of branching zone
 							double ddx = std::min(maxInternodeDistance-currentInternodeDistance, dl);//length to add to branching zone 
 
 							if(ddx > 0){
@@ -271,20 +268,19 @@ void Stem::simulate(double dt, bool verbose)
 								
 							}
 						}
-					/* apical zone */
-					if (dl>0) {
+					/* apical zone
+					only grows once the basal and branching nodes are developped*/
+						std::cout<<"	apical zone? "<<id<<" "<<length<<" "<<maxInternodeDistance<<" "<<
+						p.lb<<" "<<p.la<<" "<<p.getK()<<" "<<dl<<std::endl;
+					if ((dl>0)&&(length>=(maxInternodeDistance + p.lb))) {
+						std::cout<<"	apical zone! "<<id<<" "<<dl<<std::endl;
 						createSegments(dl,verbose);
 						length+=dl;
-					} else {
-						//if (p.subType == 3) {
-
-						//}
-					}
+					} 
 				} else { // no laterals
 					if (dl>0) {
 						createSegments(dl,verbose);
 						length+=dl;
-						//leafGrow(verbose); there should be no laterals (so no leaves)
 					}
 				} // if lateralgetLengths
 			if(dl <0){ //to keep in memory that realised length is too long, as created nodes to carry children
@@ -293,7 +289,11 @@ void Stem::simulate(double dt, bool verbose)
 				length += this->epsilonDx;//go back to having length = theoratical length
 			}
 			} // if active
-			active  = getLength(false)<=(p.getK()*0.99); // become inactive, if final length is nearly reached
+			//set limit below 1e-10, as the test files see if correct length 
+			//once rounded at the 10th decimal
+			//@see test/test_stem_ng.py
+			active  = getLength(false)<=(p.getK()*(1 - 1e-11)); // become inactive, if final length is nearly reached
+		std::cout<<"	end stem::simulate "<<id<<" "<<length<<" "<<nodes.size()<<" "<<this->epsilonDx<<std::endl;
 		}
 	} // if alive
 }
@@ -307,37 +307,39 @@ void Stem::simulate(double dt, bool verbose)
  */
 void Stem::internodalGrowth(double dl, bool verbose)
 {
+	
 	const StemSpecificParameter& p = *param(); // rename
-	double dlMeanPhyto = dl/p.ln.size(); //divid the total growth of the branching zone between the phytomere. currently, growth divided equally
-	std::vector<double> lnToGrow = p.ln;
-	double missing = 0;
-	for (size_t i=1; i<=p.ln.size(); i++) { 
-
+	std::cout<<"internodalGrowth "<<id<<" "<<p.ln.size()<<" "<<children.size()<<" "<<
+	p.nodalGrowth<<" "<<dl<<std::endl;
+	std::vector<double> toGrow(p.ln.size());
+	double dl_;
+	double missing = 0.;
+	if(p.nodalGrowth==0){
+		toGrow[0] = dl;
+		std::fill(toGrow.begin()+1,toGrow.end(),0) ;
+	}
+	if(p.nodalGrowth ==1){std::fill(toGrow.begin(),toGrow.end(),dl/p.ln.size()) ; }
+	size_t i=1;
+	while( (dl >0)&&(i<=p.ln.size()) ) {
+		//if the phytomere can do a growth superior to the mean phytomere growth, we add the value of "missing" 
+		//(i.e., length left to grow to get the predefined total growth of the branching zone)
 		int nn1 = children.at(i-1)->parentNI; //node at the beginning of phytomere
 		double length1 = getLength(nn1);
 		int nn2 = children.at(i)->parentNI; //node at end of phytomere
-		lnToGrow[i]= p.ln.at(i-1) -( getLength(nn2) - length1 ) ;//difference between maximum and current length of the phytomere
-		//if the length increase that the phytomere can do is inferior to the mean length to be added to each phytomere, 
-		//the difference is kept in memory to be later given to another phytomere
-		//this way we keep the predefined total growth of the branching zone
-		missing += std::max(dlMeanPhyto -lnToGrow[i],0.);  
+		double availableForGrowth = p.ln.at(i-1) -( getLength(nn2) - length1 ) ;//difference between maximum and current length of the phytomere
+		dl_ = std::min(toGrow[i-1],availableForGrowth);
+		std::cout<<"	togrow "<<id<<" "<<i<<" "<<availableForGrowth<<" "<<toGrow[i-1]<<" "<<dl_<<" "<<dl<<std::endl;
+		if(i< p.ln.size()){
+			toGrow[i] +=  toGrow[i-1] - dl_ ;
+		}else{missing = toGrow[i-1] - dl_;}
+		if(dl_ > 0){createSegments(dl_,verbose, i ); dl -= dl_;}
+		i++;
 		
 	}
-
-	for (size_t i=1; i<=p.ln.size(); i++) {
-		double dl = dlMeanPhyto;
-		//if the phytomere can do a growth superior to the mean phytomere growth, we add the value of "missing" 
-		//(i.e., length left to grow to get the predefined total growth of the branching zone)
-		if(lnToGrow[i]>dlMeanPhyto){
-			dl = std::min(missing,lnToGrow[i]-dlMeanPhyto )+dlMeanPhyto;
-			missing -= dl - dlMeanPhyto;
-		}
-		
-		createSegments(dl,verbose, i );
-	}
-	if(missing > 1e-6){//this sould not happen as computed dl to be <= sum(lnToGrow)
-
-		throw std::runtime_error( "Stem::internodalGrowth length left to grow");
+	if(missing > 1e-6){//this sould not happen as computed dl to be <= sum(availableForGrowth)
+		std::stringstream errMsg;
+		errMsg <<"Stem::internodalGrowth length left to grow: "<<missing;
+		throw std::runtime_error(errMsg.str().c_str());
 	}
 }
 
@@ -423,30 +425,25 @@ void Stem::createLateral(bool silence)
 {
 	auto sp = param(); // rename
 	int lt = getStemRandomParameter()->getLateralType(getNode(nodes.size()-1));//if lt ==2, don't add lateral as leaf is added instead
-	double meanLn = getStemRandomParameter()->ln; // mean inter-lateral distance
-    double effectiveLa = std::max(param()->la-meanLn/2, 0.); // effective apical distance, observed apical distance is in [la-ln/2, la+ln/2]
-	double ageLN = this->calcAge(getLength(true)); // age of stem when lateral node is created
-	double ageLG = this->calcAge(getLength(true)+effectiveLa); // age of the stem, when the lateral starts growing (i.e when the apical zone is developed)
-	double delay = ageLG-ageLN; // time the lateral has to wait
-	Matrix3d h = Matrix3d();//::ons(h_); // current heading in absolute coordinates TODO (revise??)
+	double ageLN = this->calcAge(sp->lb); // age of stem when first lateral node is created
+	Matrix3d h = Matrix3d();//not used
 	int lnf = getStemRandomParameter()->lnf;
-	double dtlat = (delay)*(1-int(sp->nodalGrowth)) + 0*int(sp->nodalGrowth);//if we have nodal growth, the laterals grow even if the apical zone of the stem is not yet formed
-																		  
+	double dtlat = sp->delayLat * children.size();					  
 	if (lnf == 2&& lt !=2) {
-		auto lateral = std::make_shared<Stem>(plant.lock(), lt, h, dtlat, shared_from_this(),  nodes.size() - 1);
+		auto lateral = std::make_shared<Stem>(plant.lock(), lt, h, dtlat/2, shared_from_this(),  nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
-		auto lateral2 = std::make_shared<Stem>(plant.lock(), lt, h, dtlat, shared_from_this(),  nodes.size() - 1);
+		auto lateral2 = std::make_shared<Stem>(plant.lock(), lt, h, dtlat/2, shared_from_this(),  nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
 	} else if (lnf==3&& lt !=2) {
-		auto lateral = std::make_shared<Stem>(plant.lock(), lt, h, dtlat, shared_from_this(), nodes.size() - 1);
+		auto lateral = std::make_shared<Stem>(plant.lock(), lt, h, dtlat/2, shared_from_this(), nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
-		auto lateral2 = std::make_shared<Stem>(plant.lock(), lt, h, dtlat, shared_from_this(), nodes.size() - 1);
+		auto lateral2 = std::make_shared<Stem>(plant.lock(), lt, h, dtlat/2, shared_from_this(), nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
@@ -456,12 +453,12 @@ void Stem::createLateral(bool silence)
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
 	} else if (lnf==5 && lt>0) {
-		auto lateral = std::make_shared<Stem>(plant.lock(), lt, h, dtlat,  shared_from_this(), nodes.size() - 1);
+		auto lateral = std::make_shared<Stem>(plant.lock(), lt, h, dtlat/2,  shared_from_this(), nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
 
-		auto lateral2 = std::make_shared<Stem>(plant.lock(), lt, h, dtlat,  shared_from_this(),  nodes.size() - 1);
+		auto lateral2 = std::make_shared<Stem>(plant.lock(), lt, h, dtlat/2,  shared_from_this(),  nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
@@ -481,50 +478,45 @@ void Stem::createLateral(bool silence)
 void Stem::leafGrow(bool silence)
 {
 	const StemSpecificParameter& sp = *param(); // rename
-	double meanLn = getStemRandomParameter()->ln; // mean inter-lateral distance
-	double effectiveLa = std::max(param()->la-meanLn/2, 0.)*(1-int(sp.nodalGrowth)); // effective apical distance, observed apical distance is in [la-ln/2, la+ln/2]
-    double ageLN = this->calcAge(getLength(true)); // age of stem when lateral node is created
-	double ageLG = this->calcAge(getLength(true)+effectiveLa); // age of the stem, when the lateral starts growing (i.e when the apical zone is developed)
-	double delay = ageLG-ageLN; // time the lateral has to wait
+	double ageLN = this->calcAge(sp.lb); // age of stem when lateral node is created
 	Matrix3d h = Matrix3d();//::ons(h_); // current heading in absolute coordinates TODO (revise??)
 	int lt =2;
 	int lnf = getStemRandomParameter()->lnf;
-	double dtLeaf = (delay)*(1-int(sp.nodalGrowth)) + 0*int(sp.nodalGrowth);//if we have nodal growth, the laterals grow even if the apical zone of the stem is not yet formed
-										
+	double dtLeaf = sp.delayLat * children.size();//
 	if (lnf==2) {
-		auto lateral = std::make_shared<Leaf>(plant.lock(), lt,  h, dtLeaf, shared_from_this(), nodes.size() - 1);
+		auto lateral = std::make_shared<Leaf>(plant.lock(), lt,  h, dtLeaf/2, shared_from_this(), nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
-		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt,  h, dtLeaf, shared_from_this(), nodes.size() - 1);
+		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt,  h, dtLeaf/2, shared_from_this(), nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
 	} else if (lnf==3) {
-		auto lateral = std::make_shared<Leaf>(plant.lock(), lt, h, dtLeaf,  shared_from_this(), nodes.size() - 1);
+		auto lateral = std::make_shared<Leaf>(plant.lock(), lt, h, dtLeaf/2,  shared_from_this(), nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
-		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt, h,  dtLeaf, shared_from_this(),nodes.size() - 1);
+		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt, h,  dtLeaf/2, shared_from_this(),nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
 	} else if (lnf==4) {
-		auto lateral = std::make_shared<Leaf>(plant.lock(), lt, h, dtLeaf,  shared_from_this(),  nodes.size() - 1);
+		auto lateral = std::make_shared<Leaf>(plant.lock(), lt, h, dtLeaf/2,  shared_from_this(),  nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
-		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt,  h, dtLeaf, shared_from_this(), nodes.size() - 1);
+		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt,  h, dtLeaf/2, shared_from_this(), nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass
 	} else if (lnf==5) {
-		auto lateral = std::make_shared<Leaf>(plant.lock(), lt, h, dtLeaf, shared_from_this(),  nodes.size() - 1);
+		auto lateral = std::make_shared<Leaf>(plant.lock(), lt, h, dtLeaf/2, shared_from_this(),  nodes.size() - 1);
 		//lateral->setRelativeOrigin(nodes.back());
 		children.push_back(lateral);
 		lateral->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
 		//std::cout <<"leaf heading is "<<h.toString()<< "\n";
-		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt, h,dtLeaf, shared_from_this(), nodes.size() - 1);
+		auto lateral2 = std::make_shared<Leaf>(plant.lock(), lt, h,dtLeaf/2, shared_from_this(), nodes.size() - 1);
 		//lateral2->setRelativeOrigin(nodes.back());
 		children.push_back(lateral2);
 		lateral2->simulate(age-ageLN,silence); // pass time overhead (age we want to achieve minus current age)
@@ -615,6 +607,7 @@ void Stem::shootBorneRootGrow(bool verbose)
  */
 Vector3d Stem::getIncrement(const Vector3d& p, double sdx, int n)
 {
+	std::cout<<"stem::getIncrement "<<id<<" "<<sdx<<" "<<n<<std::endl;
 	Vector3d h = heading(n);
 	Matrix3d ons = Matrix3d::ons(h);
 	Vector2d ab = getStemRandomParameter()->f_tf->getHeading(p, ons, dx(), shared_from_this(), n+1);
@@ -628,6 +621,7 @@ Vector3d Stem::getIncrement(const Vector3d& p, double sdx, int n)
  */
 Vector3d Stem::heading(int n ) const
 {
+	std::cout<<"stem::heading "<<id<<" "<<n<<" "<<nodes.size()<<std::endl;
 	if(n<0){n=nodes.size()-1 ;}
 	if ((nodes.size()>1)&&(n>0)) {
 		n = std::min(int(nodes.size()),n);
@@ -666,6 +660,7 @@ Vector3d Stem::getiHeading()  const
  */
 void Stem::createSegments(double l, bool verbose, int PhytoIdx)
 {
+	std::cout<<"Stem::createSegments "<<id<<" "<<PhytoIdx<<std::endl;
 	if (l==0) {
 		std::cout << "Stem::createSegments: zero length encountered \n";
 		return;
@@ -768,12 +763,12 @@ double Stem::getLength(bool realized) const
 void Stem::rel2abs() 
 {
 	
+	std::cout<<"stem::rel2abs "<<id<<" " <<nodes.size()<<std::endl;
 	nodes[0] = getOrigin(); //recompute postiion of the first node
 	
-	const StemSpecificParameter& p = *param(); // rename
 	for(size_t i=1; i<nodes.size(); i++){
 		Vector3d newdx = nodes[i];
-		if((i>=oldNumberOfNodes)||(p.nodalGrowth && active)){//if we have a new node or have nodal growth, need to update the tropism effect
+		if((i>=oldNumberOfNodes)|| active){//if we have a new node or have nodal growth, need to update the tropism effect
 			double sdx = nodes[i].length();
 			newdx = getIncrement(nodes[i-1], sdx, i-1); //add tropism
 		}
@@ -794,6 +789,7 @@ void Stem::rel2abs()
  */
 void Stem::abs2rel()
 {
+	std::cout<<"stem::abs2rel "<<id<<" " <<nodes.size()<<std::endl;
 	for (int j = nodes.size(); j>1; j--) {
 		nodes[j-1] = nodes.at(j-1).minus(nodes.at(j-2));
 	}

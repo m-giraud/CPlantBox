@@ -24,14 +24,14 @@ class TestOrgan(unittest.TestCase):
         self.human1.getNodeIndex()
         self.human1.getNodeIndex()  # to make global and organ index disagree
         self.hand.addNode(pb.Vector3d(0, 0, 0), 0)
-        self.hand.addNode(pb.Vector3d(0, 0, 1.5), 0)
-        self.hand.addNode(pb.Vector3d(0, -1, 1.6), 0)  # thumb
+        self.hand.addNode(pb.Vector3d(0, 0, 1.5),0)
+        self.hand.addNode(pb.Vector3d(0, -1, 1.6),0)  # thumb
         self.hand.addNode(pb.Vector3d(0, 1, 1.6), 0)  # little finger
         thumb = self.hand.getNodeId(2)
         lf = self.hand.getNodeId(3)
-        self.thumb.addNode(pb.Vector3d(0, -1, 1.6), thumb, 4)
-        self.thumb.addNode(pb.Vector3d(0, -2, 2.5), 4)
-        self.little_finger.addNode(pb.Vector3d(0, 1, 1.6), lf, 3)
+        self.thumb.addNode(pb.Vector3d(0, -1, 1.6),thumb, 4)
+        self.thumb.addNode(pb.Vector3d(0, -2, 2.5),4)
+        self.little_finger.addNode(pb.Vector3d(0, 1, 1.6),lf, 3)
         self.little_finger.addNode(pb.Vector3d(0, 1.7, 2.5), 3)
 
     def test_constructors(self):
