@@ -47,7 +47,7 @@ Vector3d Tropism::getPosition(const Vector3d& pos, const Matrix3d& old, double a
  */
 Vector2d Tropism::getUCHeading(const Vector3d& pos, const Matrix3d& old, double dx, const std::shared_ptr<Organ> o, int nodeIdx)
 {
-	
+
     double a = sigma*randn(nodeIdx)*sqrt(dx);
     double b =randn(nodeIdx)*2*M_PI;
     double v;
@@ -92,8 +92,8 @@ Vector2d Tropism::getUCHeading(const Vector3d& pos, const Matrix3d& old, double 
  */
 Vector2d Tropism::getHeading(const Vector3d& pos, const Matrix3d& old, double dx, const std::shared_ptr<Organ> o, int nodeIdx)
 {
-	
-	if(nodeIdx > 0 ){gen =  std::mt19937(plant.lock()->getSeedVal() + nodeIdx + o->getId());}
+
+	if (nodeIdx > 0) { gen =  std::mt19937(plant.lock()->getSeedVal() + nodeIdx + o->getId()); }
     Vector2d h = this->getUCHeading(pos, old, dx, o, nodeIdx);
     double a = h.x;
     double b = h.y;

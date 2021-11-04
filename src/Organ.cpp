@@ -26,10 +26,10 @@ namespace CPlantBox {
  * @param oldNON    the number of nodes of the previous time step (default = 0)
  */
 Organ::Organ(int id, std::shared_ptr<const OrganSpecificParameter> param, bool alive, bool active,
-		double age, double length, Matrix3d iHeading, int pni, bool moved, int oldNON)
-:iHeading(iHeading), parentNI(pni), plant(), parent(), id(id), param_(param), alive(alive), active(active), age(age),
- length(length), moved(moved), oldNumberOfNodes(oldNON)
-{ }
+    double age, double length, Matrix3d iHeading, int pni, bool moved, int oldNON)
+    :iHeading(iHeading), parentNI(pni), plant(), parent(), id(id), param_(param), alive(alive), active(active), age(age),
+     length(length), moved(moved), oldNumberOfNodes(oldNON)
+     { }
 
 /**
  * The constructor is used for simulation.
@@ -46,10 +46,10 @@ Organ::Organ(int id, std::shared_ptr<const OrganSpecificParameter> param, bool a
  * @param pni
  */
 Organ::Organ(std::shared_ptr<Organism> plant, std::shared_ptr<Organ> parent, int ot, int st, double delay,
-		Matrix3d iHeading, int pni)
+    Matrix3d iHeading, int pni)
 :iHeading(iHeading), parentNI(pni), plant(plant), parent(parent), id(plant->getOrganIndex()),
-  param_(plant->getOrganRandomParameter(ot, st)->realize()), /* root parameters are diced in the getOrganRandomParameter class */
-  age(-delay)
+ param_(plant->getOrganRandomParameter(ot, st)->realize()), /* root parameters are diced in the getOrganRandomParameter class */
+ age(-delay)
 {}
 
 /*
@@ -61,30 +61,30 @@ Organ::Organ(std::shared_ptr<Organism> plant, std::shared_ptr<Organ> parent, int
  */
 std::shared_ptr<Organ> Organ::copy(std::shared_ptr<Organism>  p)
 {
-	auto o = std::make_shared<Organ>(*this); // shallow copy
-	o->parent = std::weak_ptr<Organ>();
-	o->plant = p;
-	o->param_ = std::make_shared<OrganSpecificParameter>(*param_); // copy parameters
-	for (size_t i=0; i< children.size(); i++) {
-		o->children[i] = children[i]->copy(p); // copy lateral
-		o->children[i]->setParent(o);
-	}
-	return o;
+    auto o = std::make_shared<Organ>(*this); // shallow copy
+    o->parent = std::weak_ptr<Organ>();
+    o->plant = p;
+    o->param_ = std::make_shared<OrganSpecificParameter>(*param_); // copy parameters
+    for (size_t i=0; i< children.size(); i++) {
+        o->children[i] = children[i]->copy(p); // copy lateral
+        o->children[i]->setParent(o);
+    }
+    return o;
 }
 
 /**
- * @param realized	FALSE:	get theoretical organ length, INdependent from spatial resolution (dx() and dxMin()) 
+ * @param realized	FALSE:	get theoretical organ length, INdependent from spatial resolution (dx() and dxMin())
  *					TRUE:	get realized organ length, dependent from spatial resolution (dx() and dxMin())
  *					DEFAULT = TRUE
  * @return 			The chosen type of organ length (realized or theoretical).
  */
 double Organ::getLength(bool realized) const
 {
-	if (realized) {
-		return length - this->epsilonDx;
-	} else {
-		return length;
-	}
+    if (realized) {
+        return length - this->epsilonDx;
+    } else {
+        return length;
+    }
 }
 
 /**
@@ -92,11 +92,11 @@ double Organ::getLength(bool realized) const
  */
 double Organ::getLength(int i) const
 {
-	double l = 0.; // length until node i
-	for (int j = 0; j<i; j++) {
-		l += nodes.at(j+1).minus(nodes.at(j)).length(); // relative length equals absolute length
-	}
-	return l;
+    double l = 0.; // length until node i
+    for (int j = 0; j<i; j++) {
+        l += nodes.at(j+1).minus(nodes.at(j)).length(); // relative length equals absolute length
+    }
+    return l;
 }
 
 /**
@@ -108,7 +108,7 @@ double Organ::getLength(int i) const
  */
 int Organ::organType() const
 {
-	return Organism::ot_organ;
+    return Organism::ot_organ;
 }
 
 /**
@@ -117,7 +117,7 @@ int Organ::organType() const
  */
 std::shared_ptr<OrganRandomParameter> Organ::getOrganRandomParameter() const
 {
-	return plant.lock()->getOrganRandomParameter(this->organType(), param_->subType);
+    return plant.lock()->getOrganRandomParameter(this->organType(), param_->subType);
 }
 
 /**
@@ -128,17 +128,17 @@ std::shared_ptr<OrganRandomParameter> Organ::getOrganRandomParameter() const
  */
 void Organ::simulate(double dt, bool verbose)
 {
-	// store information of this time step
-	oldNumberOfNodes = nodes.size();
-	moved = false;
+    // store information of this time step
+    oldNumberOfNodes = nodes.size();
+    moved = false;
 
-	// if the organ is alive, manage children
-	if (alive) {
-		age += dt;
-		for (auto& c : children)  {
-			c->simulate(dt, verbose);
-		}
-	}
+    // if the organ is alive, manage children
+    if (alive) {
+        age += dt;
+        for (auto& c : children)  {
+            c->simulate(dt, verbose);
+        }
+    }
 }
 
 /**
@@ -146,7 +146,7 @@ void Organ::simulate(double dt, bool verbose)
  */
 std::shared_ptr<Plant> Organ::getPlant() const
 {
-	return std::dynamic_pointer_cast<Plant>(plant.lock());
+    return std::dynamic_pointer_cast<Plant>(plant.lock());
 }
 
 /*
@@ -156,8 +156,8 @@ std::shared_ptr<Plant> Organ::getPlant() const
  */
 void Organ::addChild(std::shared_ptr<Organ> c)
 {
-	c->setParent(shared_from_this());
-	children.push_back(c);
+    c->setParent(shared_from_this());
+    children.push_back(c);
 }
 
 /**
@@ -173,29 +173,25 @@ void Organ::addChild(std::shared_ptr<Organ> c)
  */
 void Organ::addNode(Vector3d n, int id, double t, size_t index, bool shift)
 {
-	std::cout<<"ORgan::addNode "<<this->id<<" "<<id<<" "<<t<<" "<<index<<" "<<shift<<std::endl;
-	if(!shift){//node added at the end of organ
-		nodes.push_back(n); // node
-		nodeIds.push_back(id); // new unique id
-		nodeCTs.push_back(t); // exact creation time
-	}
-	else{//could be quite slow  to insert, but we won t have that many (node-)tillers (?) 
-		nodes.insert(nodes.begin() + index, n);//add the node at index
-		//add a global index. 
-		//no need for the nodes to keep the same global index and makes the update of the nodes position for MappedPlant object more simple)
-		nodeIds.push_back(id);  
-		nodeCTs.insert(nodeCTs.begin() + index-1, t);
-		for(auto kid : children){//if carries children after the added node, update their "parent node index"
-			if(kid->parentNI >= index-1){
-				kid->moveOrigin(kid->parentNI + 1);
-				}
-			
-		}
-		
-	}
-	}
-	
-	
+    // std::cout<<"Organ::addNode "<<this->id<<" "<<id<<" "<<t<<" "<<index<<" "<<shift<<std::endl;
+    if(!shift){//node added at the end of organ
+        nodes.push_back(n); // node
+        nodeIds.push_back(id); // new unique id
+        nodeCTs.push_back(t); // exact creation time
+    } else { //could be quite slow  to insert, but we won t have that many (node-)tillers (?)
+        nodes.insert(nodes.begin() + index, n);//add the node at index
+        //add a global index.
+        //no need for the nodes to keep the same global index and makes the update of the nodes position for MappedPlant object more simple)
+        nodeIds.push_back(id);
+        nodeCTs.insert(nodeCTs.begin() + index-1, t);
+        for(auto kid : children){ // if carries children after the added node, update their "parent node index"
+            if(kid->parentNI >= index-1){
+                // std::cout<<"Organ::addNode "<<this->id<<" "<<id<<" "<<t<<" "<<index<<" "<< kid->parentNI <<std::endl;
+                kid->moveOrigin(kid->parentNI + 1);
+            }
+        }
+    }
+}
 
 /**
  * change idx of node linking to parent organ (in case of internodal growth)
@@ -204,9 +200,9 @@ void Organ::addNode(Vector3d n, int id, double t, size_t index, bool shift)
  */
 void Organ::moveOrigin(int idx)
 {
-	this->parentNI = idx;
-	nodeIds.at(0) = getParent()->getNodeId(idx);
-	
+    this->parentNI = idx;
+    nodeIds.at(0) = getParent()->getNodeId(idx);
+
 }
 
 /**
@@ -221,7 +217,7 @@ void Organ::moveOrigin(int idx)
  */
 void Organ::addNode(Vector3d n, double t, size_t index, bool shift)
 {
-	addNode(n,plant.lock()->getNodeIndex(),t, index, shift);
+    addNode(n,plant.lock()->getNodeIndex(),t, index, shift);
 }
 
 /**
@@ -233,16 +229,16 @@ void Organ::addNode(Vector3d n, double t, size_t index, bool shift)
  */
 std::vector<Vector2i> Organ::getSegments() const
 {
-	if (this->nodes.size()>1) {
-		std::vector<Vector2i> segs = std::vector<Vector2i>(nodes.size()-1);
-		for (size_t i=0; i<nodes.size()-1; i++) {
-			Vector2i s(getNodeId(i),getNodeId(i+1));
-			segs[i] = s;
-		}
-		return segs;
-	} else {
-		return std::vector<Vector2i>(0);
-	}
+    if (this->nodes.size()>1) {
+        std::vector<Vector2i> segs = std::vector<Vector2i>(nodes.size()-1);
+        for (size_t i=0; i<nodes.size()-1; i++) {
+            Vector2i s(getNodeId(i),getNodeId(i+1));
+            segs[i] = s;
+        }
+        return segs;
+    } else {
+        return std::vector<Vector2i>(0);
+    }
 }
 
 /**
@@ -250,7 +246,7 @@ std::vector<Vector2i> Organ::getSegments() const
  */
 double Organ::dx() const
 {
-	return getOrganRandomParameter()->dx;
+    return getOrganRandomParameter()->dx;
 }
 
 /**
@@ -259,7 +255,7 @@ double Organ::dx() const
  */
 double Organ::dxMin() const
 {
-	return getOrganRandomParameter()->dxMin;
+    return getOrganRandomParameter()->dxMin;
 }
 
 /**
@@ -271,11 +267,11 @@ double Organ::dxMin() const
  * or another organ type is expected, an empty vector is returned.
  */
 std::vector<std::shared_ptr<Organ>> Organ::getOrgans(int ot)
-{
-	auto v = std::vector<std::shared_ptr<Organ>> ();
-	this->getOrgans(ot, v);
-	return v;
-}
+    {
+    auto v = std::vector<std::shared_ptr<Organ>> ();
+    this->getOrgans(ot, v);
+    return v;
+    }
 
 /**
  * Returns the organs as sequential list, copies only organs with more than one node.
@@ -286,15 +282,15 @@ std::vector<std::shared_ptr<Organ>> Organ::getOrgans(int ot)
  */
 void Organ::getOrgans(int ot, std::vector<std::shared_ptr<Organ>>& v)
 {
-	if (this->nodes.size()>1) {
-		if ((ot<0) || (ot==this->organType())) {
-			v.push_back(shared_from_this());
-		}
-	}
-	// std::cout << "Organ::getOrgans recursive: number of children " <<  this->children.size() << "\n" << std::flush;
-	for (const auto& c : this->children) {
-		c->getOrgans(ot,v);
-	}
+    if (this->nodes.size()>1) {
+        if ((ot<0) || (ot==this->organType())) {
+            v.push_back(shared_from_this());
+        }
+    }
+    // std::cout << "Organ::getOrgans recursive: number of children " <<  this->children.size() << "\n" << std::flush;
+    for (const auto& c : this->children) {
+        c->getOrgans(ot,v);
+    }
 }
 
 /**
@@ -302,13 +298,13 @@ void Organ::getOrgans(int ot, std::vector<std::shared_ptr<Organ>>& v)
  * @see Organ::getNumberOfChildren
  */
 int Organ::getNumberOfLaterals() const {
-	int nol = 0;
-	for (auto& c : children)  {
-		if (c->getAge()>0) { // born
-			nol ++;
-		}
-	}
-	return nol;
+    int nol = 0;
+    for (auto& c : children)  {
+        if (c->getAge()>0) { // born
+            nol ++;
+        }
+    }
+    return nol;
 }
 
 /**
@@ -322,29 +318,29 @@ int Organ::getNumberOfLaterals() const {
  * @return The parameter value, if unknown NaN
  */
 double Organ::getParameter(std::string name) const {
-	// specific parameters
-	if (name=="subType") { return this->param_->subType; }
+    // specific parameters
+    if (name=="subType") { return this->param_->subType; }
     if (name=="a") { return param_->a; } // root radius [cm]
-	if (name=="radius") { return this->param_->a; } // root radius [cm]
-	if (name=="diameter") { return 2.*this->param_->a; } // root diameter [cm]
-	// organ member variables
+    if (name=="radius") { return this->param_->a; } // root radius [cm]
+    if (name=="diameter") { return 2.*this->param_->a; } // root diameter [cm]
+    // organ member variables
     if (name=="iHeadingX") { return iHeading.column(0).x; } // root initial heading x - coordinate [cm]
     if (name=="iHeadingY") { return iHeading.column(0).y; } // root initial heading y - coordinate [cm]
     if (name=="iHeadingZ") { return iHeading.column(0).z; } // root initial heading z - coordinate [cm]
     if (name=="parentNI") { return parentNI; } // local parent node index where the lateral emerges
     if (name=="parent-node") { // local parent node index where this lateral emerges
-    	if (this->parent.expired()) {
-    		return -1; // to indicate it is base root
-    	}
-    	return parentNI;
+        if (this->parent.expired()) {
+            return -1; // to indicate it is base root
+        }
+        return parentNI;
     }
     // organ member functions
-	if (name=="organType") { return this->organType(); }
+    if (name=="organType") { return this->organType(); }
     if (name=="numberOfChildren") { return children.size(); }
-	if (name=="id") { return getId(); }
-	if (name=="alive") { return isAlive(); }
-	if (name=="active") { return isActive(); }
-	if (name=="age") { return getAge(); }
+    if (name=="id") { return getId(); }
+    if (name=="alive") { return isAlive(); }
+    if (name=="active") { return isActive(); }
+    if (name=="age") { return getAge(); }
     if (name=="length") { return getLength(true); } //realized organ length, dependent on dxMin and dx
     if (name=="lengthTh") { return getLength(false); } //theoratical organ length, dependent on dxMin and dx
     if (name=="numberOfNodes") { return getNumberOfNodes(); }
@@ -354,16 +350,16 @@ double Organ::getParameter(std::string name) const {
     if (name=="numberOfLaterals") { return getNumberOfLaterals(); }
     // further
     if (name=="creationTime") { return getNodeCT(0); }
-	if (name=="order") { // count how often it is possible to move up
-		int o = 0;
-		auto p = shared_from_this();
-		while ((!p->parent.expired()) && (p->parent.lock()->organType()!=Organism::ot_seed)) {
-			o++;
-			p = p->parent.lock(); // up the organ tree
-		}
-		return o;
-	}
-	if (name=="one") { return 1; } // e.g. for counting the organs
+    if (name=="order") { // count how often it is possible to move up
+        int o = 0;
+        auto p = shared_from_this();
+        while ((!p->parent.expired()) && (p->parent.lock()->organType()!=Organism::ot_seed)) {
+            o++;
+            p = p->parent.lock(); // up the organ tree
+        }
+        return o;
+    }
+    if (name=="one") { return 1; } // e.g. for counting the organs
     return this->getOrganRandomParameter()->getParameter(name); // ask the random parameter
 }
 
@@ -377,64 +373,64 @@ double Organ::getParameter(std::string name) const {
  */
 void Organ::writeRSML(tinyxml2::XMLDocument& doc, tinyxml2::XMLElement* parent) const
 {
-	if (this->nodes.size()>1) {
-		int nn = plant.lock()->getRSMLSkip()+1;
-		// organ
-		// std::string name = getOrganTypeParameter()->name; // todo where to put it
-		tinyxml2::XMLElement* organ = doc.NewElement("root"); // TODO use ot to fetch tag name?
-		organ->SetAttribute("ID", id);
-		// geometry
-		tinyxml2::XMLElement* geometry = doc.NewElement("geometry");
-		organ->InsertEndChild(geometry);
-		tinyxml2::XMLElement* polyline = doc.NewElement("polyline");
-		int o = (!this->parent.expired()); // baseRoot = 0, others = 1
-		for (int i = o; i<getNumberOfNodes(); i+=nn) {
-			auto n = getNode(i);
-			tinyxml2::XMLElement* p = doc.NewElement("point");
-			p->SetAttribute("x", float(n.x));
-			p->SetAttribute("y", float(n.y));
-			p->SetAttribute("z", float(n.z));
-			polyline->InsertEndChild(p);
-		}
-		geometry->InsertEndChild(polyline);
-		// properties
-		tinyxml2::XMLElement* properties = doc.NewElement("properties");
-		auto prop_names = plant.lock()->getRSMLProperties();
-		for (const auto& pname : prop_names) {
-			tinyxml2::XMLElement* p = doc.NewElement(pname.c_str());
-			p->SetAttribute("value", float(this->getParameter(pname)));
-			properties->InsertEndChild(p);
-		}
-		organ->InsertEndChild(properties);
-		/* laterals roots */
-		for (size_t i = 0; i<children.size(); i+=nn) {
-			children[i]->writeRSML(doc, organ);
-		}
-		// functions
-		tinyxml2::XMLElement* fcts = doc.NewElement("functions");
-		tinyxml2::XMLElement* fun1 = doc.NewElement("function");
-		fun1->SetAttribute("domain","polyline");
-		fun1->SetAttribute("name","node_creation_time");
-		for (int i = o; i<getNumberOfNodes(); i+=nn) {
-			double ct = getNodeCT(i);
-			tinyxml2::XMLElement* p = doc.NewElement("sample");
-			p->SetAttribute("value", ct);
-			fun1->InsertEndChild(p);
-		}
-		tinyxml2::XMLElement* fun2 = doc.NewElement("function");
-		fun2->SetAttribute("domain","polyline");
-		fun2->SetAttribute("name","node_index");
-		for (int i = o; i<getNumberOfNodes(); i+=nn) {
-			int nid = getNodeId(i);
-			tinyxml2::XMLElement* p = doc.NewElement("sample");
-			p->SetAttribute("value", nid);
-			fun2->InsertEndChild(p);
-		}
-		fcts->InsertEndChild(fun1);
-		fcts->InsertEndChild(fun2);
-		organ->InsertEndChild(fcts);
-		parent->InsertEndChild(organ);
-	}
+    if (this->nodes.size()>1) {
+        int nn = plant.lock()->getRSMLSkip()+1;
+        // organ
+        // std::string name = getOrganTypeParameter()->name; // todo where to put it
+        tinyxml2::XMLElement* organ = doc.NewElement("root"); // TODO use ot to fetch tag name?
+        organ->SetAttribute("ID", id);
+        // geometry
+        tinyxml2::XMLElement* geometry = doc.NewElement("geometry");
+        organ->InsertEndChild(geometry);
+        tinyxml2::XMLElement* polyline = doc.NewElement("polyline");
+        int o = (!this->parent.expired()); // baseRoot = 0, others = 1
+        for (int i = o; i<getNumberOfNodes(); i+=nn) {
+            auto n = getNode(i);
+            tinyxml2::XMLElement* p = doc.NewElement("point");
+            p->SetAttribute("x", float(n.x));
+            p->SetAttribute("y", float(n.y));
+            p->SetAttribute("z", float(n.z));
+            polyline->InsertEndChild(p);
+        }
+        geometry->InsertEndChild(polyline);
+        // properties
+        tinyxml2::XMLElement* properties = doc.NewElement("properties");
+        auto prop_names = plant.lock()->getRSMLProperties();
+        for (const auto& pname : prop_names) {
+            tinyxml2::XMLElement* p = doc.NewElement(pname.c_str());
+            p->SetAttribute("value", float(this->getParameter(pname)));
+            properties->InsertEndChild(p);
+        }
+        organ->InsertEndChild(properties);
+        /* laterals roots */
+        for (size_t i = 0; i<children.size(); i+=nn) {
+            children[i]->writeRSML(doc, organ);
+        }
+        // functions
+        tinyxml2::XMLElement* fcts = doc.NewElement("functions");
+        tinyxml2::XMLElement* fun1 = doc.NewElement("function");
+        fun1->SetAttribute("domain","polyline");
+        fun1->SetAttribute("name","node_creation_time");
+        for (int i = o; i<getNumberOfNodes(); i+=nn) {
+            double ct = getNodeCT(i);
+            tinyxml2::XMLElement* p = doc.NewElement("sample");
+            p->SetAttribute("value", ct);
+            fun1->InsertEndChild(p);
+        }
+        tinyxml2::XMLElement* fun2 = doc.NewElement("function");
+        fun2->SetAttribute("domain","polyline");
+        fun2->SetAttribute("name","node_index");
+        for (int i = o; i<getNumberOfNodes(); i+=nn) {
+            int nid = getNodeId(i);
+            tinyxml2::XMLElement* p = doc.NewElement("sample");
+            p->SetAttribute("value", nid);
+            fun2->InsertEndChild(p);
+        }
+        fcts->InsertEndChild(fun1);
+        fcts->InsertEndChild(fun2);
+        organ->InsertEndChild(fcts);
+        parent->InsertEndChild(organ);
+    }
 }
 
 /**
@@ -443,13 +439,13 @@ void Organ::writeRSML(tinyxml2::XMLDocument& doc, tinyxml2::XMLElement* parent) 
  */
 std::string Organ::toString() const
 {
-	std::stringstream str;
-	str << Organism::organTypeNames.at(this->organType()) << " #"<< getId() <<": sub type "<< param_->subType
-					<< ", realized length " << getLength(true)
-					<< " cm , theoretic length " << getLength(false) << " cm , age " << getAge()
-    				<< " days, alive " << isAlive() << ", active " << isActive() << ", number of nodes " << this->getNumberOfNodes()
-					<< ", with "<< children.size() << " children";
-	return str.str();
+    std::stringstream str;
+    str << Organism::organTypeNames.at(this->organType()) << " #"<< getId() <<": sub type "<< param_->subType
+        << ", realized length " << getLength(true)
+        << " cm , theoretic length " << getLength(false) << " cm , age " << getAge()
+        << " days, alive " << isAlive() << ", active " << isActive() << ", number of nodes " << this->getNumberOfNodes()
+        << ", with "<< children.size() << " children";
+    return str.str();
 }
 
 /**
@@ -457,14 +453,14 @@ std::string Organ::toString() const
  */
 Vector3d Organ::heading() const
 {
-	if (nodes.size()>1) {
-		int n = nodes.size();
-		Vector3d h = getNode(n-1).minus(getNode(n-2));
-		h.normalize();
-		return h;
-	} else {
-		return iHeading.column(0);
-	}
+    if (nodes.size()>1) {
+        int n = nodes.size();
+        Vector3d h = getNode(n-1).minus(getNode(n-2));
+        h.normalize();
+        return h;
+    } else {
+        return iHeading.column(0);
+    }
 }
 
 }

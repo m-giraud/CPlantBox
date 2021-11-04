@@ -60,9 +60,9 @@ Leaf::Leaf(std::shared_ptr<Organism> plant, int type, Matrix3d iHeading, double 
 		theta *= scale;
 	}
 	this->partialIHeading = Vector3d::rotAB(theta,beta);
-	
+
 	if (parent->organType()!=Organism::ot_seed) { // initial node
-	
+
 		double creationTime;
 		if (parent->organType()==Organism::ot_stem) {
 			if (parent->getNumberOfChildren() == 0){creationTime = parent->getNodeCT(pni)+delay;
@@ -346,7 +346,7 @@ double Leaf::calcLength(double age)
 {
 	assert(age>=0  && "Leaf::calcLength() negative root age");
 	return getLeafRandomParameter()->f_gf->getLength(age,getLeafRandomParameter()->r,param()->getK(),shared_from_this());
-	
+
 }
 
 /**
@@ -358,7 +358,7 @@ double Leaf::calcAge(double length)
 {
 	assert(length>=0 && "Leaf::calcAge() negative root length");
 	return getLeafRandomParameter()->f_gf->getAge(length,getLeafRandomParameter()->r,param()->getK(),shared_from_this());
-	
+
 }
 
 /**
@@ -446,30 +446,26 @@ void Leaf::createLateral(bool silence)
 /**
  * @return the position of the node with index @param i.
  */
-void Leaf::rel2abs() 
+void Leaf::rel2abs()
 {
 	nodes[0] = getOrigin();
 	for(size_t i=1; i<nodes.size(); i++){
 		Vector3d newdx = nodes[i];
 		//if new node or has an age-dependent tropism + reached age at which tropism changes. Might need to update the conditions if do new tropism functions
 		//i.e., gradual change according to age
-		if((i>= oldNumberOfNodes )|| (ageDependentTropism&& (age > getLeafRandomParameter()->f_tf->ageSwitch))){
+		if ((i>= oldNumberOfNodes) || (ageDependentTropism && (age > getLeafRandomParameter()->f_tf->ageSwitch))){
 			double sdx = nodes[i].length();
 			newdx = getIncrement(nodes[i-1], sdx, i-1);
 		}
 		nodes[i] = nodes[i-1].plus(newdx);
-		
 	}
-	if(ageDependentTropism && (age > getLeafRandomParameter()->f_tf->ageSwitch)){
-		ageDependentTropism = false; //switch done
+	if (ageDependentTropism && (age > getLeafRandomParameter()->f_tf->ageSwitch)){
+		ageDependentTropism = false; // switch done
 	}
 	for(size_t i=0; i<children.size(); i++){
-		(children[i])->rel2abs();
-	}//if carries children, update their pos
-	
-	
+		(children[i])->rel2abs(); //if carries children, update their pos
+	}
 }
-
 
 /**
  * @return the position of the node with index @param i.
@@ -478,15 +474,12 @@ void Leaf::abs2rel()
 {
 	for (int j = nodes.size(); j>1; j--) {
 		nodes[j-1] = nodes.at(j-1).minus(nodes.at(j-2));
-		}
+	}
 	nodes[0] = Vector3d(0.,0.,0.);
 	for(size_t i=0; i<children.size(); i++){
-		(children[i])->abs2rel();
-	}//if carry children, update their pos
-	
+		(children[i])->abs2rel(); //if carry children, update their pos
+	}
 }
-
-
 
 /**
  * Returns the increment of the next segments
@@ -559,8 +552,8 @@ void Leaf::createSegments(double l, bool verbose)
 	if (firstCall) { // first call of createSegments (in Leaf::simulate)
 		firstCall = false;
 
-		
-		if (nn>1) { 
+
+		if (nn>1) {
 			Vector3d h = nodes[nn-1];
 			double olddx = h.length(); // length of last segment
 			if (olddx<dx()*0.99) { // shift node instead of creating a new node
@@ -574,8 +567,8 @@ void Leaf::createSegments(double l, bool verbose)
 				if (l<=0) { // ==0 should be enough
 					return;
 				}
-			} 
-		} 
+			}
+		}
 	}
 	// create n+1 new nodes
 	double sl = 0; // summed length of created segment

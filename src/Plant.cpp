@@ -13,7 +13,7 @@ namespace CPlantBox {
  * todo doc me
  */
 Plant::Plant(double seednum ): Organism(seednum)
-{ }
+    { }
 
 /**
  * todo doc me
@@ -37,7 +37,7 @@ std::shared_ptr<Organism> Plant::copy()
  */
 std::shared_ptr<Seed> Plant::getSeed()
 {
-	return std::static_pointer_cast<Seed>(baseOrgans.at(0));
+    return std::static_pointer_cast<Seed>(baseOrgans.at(0));
 }
 
 /**
@@ -74,11 +74,11 @@ void Plant::reset()
  * Sets up the plant according to the plant parameters,
  * a confining geometry, the tropism functions, and the growth functions.
  *
- * If not used for test file: Call this method before simulation and after setting geometry, 
+ * If not used for test file: Call this method before simulation and after setting geometry,
  * plant and root parameters
  * @param verbose       print information
- * @param test          is it used for a test file 
- *						(in which case only initialize seed and not the other organs)? 
+ * @param test          is it used for a test file
+ *						(in which case only initialize seed and not the other organs)?
  *						@See CPlantBox/test/test_stem.py
  */
 void Plant::initialize(bool verbose, bool test)
@@ -87,17 +87,17 @@ void Plant::initialize(bool verbose, bool test)
 
     // create seed
     auto seed = std::make_shared<Seed>(shared_from_this());
-	if(!test){
-		seed->initialize(verbose);
-	}
+    if(!test){
+        seed->initialize(verbose);
+    }
     baseOrgans.push_back(seed);
 
     oldNumberOfNodes = getNumberOfNodes(); // todo check what this does
 
     // further initializations
-	if(!test){
-		initCallbacks();
-	}
+    if(!test){
+        initCallbacks();
+    }
 }
 
 
@@ -121,7 +121,7 @@ void Plant::initCallbacks()
     // Create tropisms and growth functions per random leaf parameter
     for (auto& p_otp :organParam[Organism::ot_leaf]) {
         auto rp = std::static_pointer_cast<LeafRandomParameter>(p_otp.second);
-		double Tage =  rp->tropismAge +  rp->tropismAges * randn();
+        double Tage =  rp->tropismAge +  rp->tropismAges * randn();
         auto tropism = this->createTropismFunction(rp->tropismT, rp->tropismN, rp->tropismS, Tage);
         tropism->setGeometry(geometry);
         rp->f_tf = tropism; // set new one
@@ -132,7 +132,7 @@ void Plant::initCallbacks()
     // Create tropisms and growth functions per random stem parameter
     for (auto& p_otp :organParam[Organism::ot_stem]) {
         auto rp = std::static_pointer_cast<StemRandomParameter>(p_otp.second);
-		double Tage =  rp->tropismAge +  rp->tropismAges * randn();
+        double Tage =  rp->tropismAge +  rp->tropismAges * randn();
         auto tropism = this->createTropismFunction(rp->tropismT, rp->tropismN, rp->tropismS, Tage);
         tropism->setGeometry(geometry);
         rp->f_tf = tropism; // set new one
@@ -169,31 +169,31 @@ void Plant::setTropism(std::shared_ptr<Tropism> tf, int organType, int subType) 
     }
     // static cast since tropisms are not in the base class
     for (auto& orp_ : orp)
-    switch(organType) {
-    case Organism::ot_root: {
-        auto rtp = std::static_pointer_cast<RootRandomParameter>(orp_);
-        rtp->f_tf = tf;
-    } break;
-    case Organism::ot_stem: {
-        auto rtp = std::static_pointer_cast<StemRandomParameter>(orp_);
-        rtp->f_tf = tf;
-    } break;
-    case Organism::ot_leaf: {
-        auto rtp = std::static_pointer_cast<LeafRandomParameter>(orp_);
-        rtp->f_tf = tf;
-    } break;
-    default: throw std::invalid_argument( "Plant::setTropism() cannot set tropism for organ type "+ Organism::organTypeName(organType) );
-    }
+        switch(organType) {
+        case Organism::ot_root: {
+            auto rtp = std::static_pointer_cast<RootRandomParameter>(orp_);
+            rtp->f_tf = tf;
+        } break;
+        case Organism::ot_stem: {
+            auto rtp = std::static_pointer_cast<StemRandomParameter>(orp_);
+            rtp->f_tf = tf;
+        } break;
+        case Organism::ot_leaf: {
+            auto rtp = std::static_pointer_cast<LeafRandomParameter>(orp_);
+            rtp->f_tf = tf;
+        } break;
+        default: throw std::invalid_argument( "Plant::setTropism() cannot set tropism for organ type "+ Organism::organTypeName(organType) );
+        }
 }
 
 /**
  * Simulates plant growth for the time span defined in the root system parameters
  */
-	void Plant::simulate(double dt, bool verbose)	
-{	
-	abs2rel();
-    Organism::simulate(dt, verbose);	
-	rel2abs();
+void Plant::simulate(double dt, bool verbose)
+{
+    abs2rel();
+    Organism::simulate(dt, verbose);
+    rel2abs();
 }
 
 /**
@@ -201,46 +201,39 @@ void Plant::setTropism(std::shared_ptr<Tropism> tf, int organType, int subType) 
  */
 void Plant::simulate()
 {
-	abs2rel();
+    abs2rel();
     auto srp = std::static_pointer_cast<SeedRandomParameter>(organParam[Organism::ot_seed][0]);
     Organism::simulate(srp->simtime);
-	rel2abs();
+    rel2abs();
 }
 
 /**
  * go from to absolute to relative value for aboveground organs
  */
-void Plant::abs2rel()	
-{	
-	auto s = getSeed();
-	for (int i = 0; i< s->getNumberOfChildren();i++) {
-		auto child = s->getChild(i);
-		if(child->organType() >2){ //if aboveground-organ
-			child->abs2rel();
-		}
-		
+void Plant::abs2rel()
+{
+    auto s = getSeed();
+    for (int i = 0; i< s->getNumberOfChildren();i++) {
+        auto child = s->getChild(i);
+        if (child->organType() >2) { //if aboveground-organ
+            child->abs2rel();
+        }
     }
-	
 }
-
 
 /**
  * add tropism for aboveground organs
  */
-void Plant::rel2abs()	
-{	
-	auto s = getSeed();
-	for (int i = 0; i< s->getNumberOfChildren();i++) {
-		auto child = s->getChild(i);
-		if(child->organType() >2){ //if aboveground-organ
-			child->rel2abs();
-		}
-		
+void Plant::rel2abs()
+{
+    auto s = getSeed();
+    for (int i = 0; i< s->getNumberOfChildren();i++) {
+        auto child = s->getChild(i);
+        if (child->organType()>2) { //if aboveground-organ
+            child->rel2abs();
+        }
     }
-	
 }
-
-
 
 /**
  * Creates a specific tropism from the tropism type index.
@@ -264,7 +257,7 @@ std::shared_ptr<Tropism> Plant::createTropismFunction(int tt, double N, double s
     }
     case tt_twist:  return std::make_shared<TwistTropism>(shared_from_this(),N,sigma);
     case tt_antigravi: return std::make_shared<AntiGravitropism>(shared_from_this(),N,sigma);
-     case tt_antigravi2gravi: return std::make_shared<AntiGravi2Gravitropism>(shared_from_this(),N,sigma, ageSwitch);
+    case tt_antigravi2gravi: return std::make_shared<AntiGravi2Gravitropism>(shared_from_this(),N,sigma, ageSwitch);
     default: throw std::invalid_argument( "Plant::createTropismFunction() tropism type not implemented" );
     }
 }
@@ -313,9 +306,9 @@ void Plant::write(std::string name) const
         fos.open(name.c_str());
         writeVTP(-1, fos);
         fos.close();
-//    } else if (ext.compare(".py")==0)  {
-//        std::cout << "writing Geometry ... "<< name.c_str() <<"\n";
-//        writeGeometry(fos);
+        //    } else if (ext.compare(".py")==0)  {
+        //        std::cout << "writing Geometry ... "<< name.c_str() <<"\n";
+        //        writeGeometry(fos);
     } else {
         throw std::invalid_argument("RootSystem::write(): Unkwown file type");
     }
